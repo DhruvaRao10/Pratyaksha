@@ -62,9 +62,22 @@ const Login = () => {
         setShowPass(prev => !prev);
     };
 
+    const setAuthTokens = (access_token, refresh_token) => {
+        // Store tokens
+        localStorage.setItem('access_token', access_token);
+        localStorage.setItem('refresh_token', refresh_token);
+        
+        // Verify tokens were stored
+        const storedAccessToken = localStorage.getItem('access_token');
+        const storedRefreshToken = localStorage.getItem('refresh_token');
+        
+        if (!storedAccessToken || !storedRefreshToken) {
+            throw new Error('Failed to store authentication tokens');
+        }
+    };
+
     const handleLogin = async () => {
         try {
-            // Validate email before sending request
             if (!validateEmail({ target: { value: email } })) {
                 return;
             }
@@ -76,51 +89,67 @@ const Login = () => {
 
             const response = await axiosClient.post('/login', payload);
             
-            // Store tokens in localStorage
-            localStorage.setItem('accessToken', response.data.access_token);
-            localStorage.setItem('refreshToken', response.data.refresh_token);
-            
-            console.log("Login successful");
-            navigate('/home'); 
+            if (response.data && response.data.access_token && response.data.refresh_token) {
+                // Store tokens
+                setAuthTokens(response.data.access_token, response.data.refresh_token);
+                
+                // Verify token storage before navigation
+                const verifyToken = localStorage.getItem('access_token');
+                if (!verifyToken) {
+                    throw new Error('Token storage failed');
+                }
+                
+                console.log("Login successful - Token stored:", !!verifyToken);
+                navigate('/home');
+            } else {
+                throw new Error('Invalid response format from server');
+            }
             
         } catch (err) {
+            console.error("Login error details:", err);
             if (err.response) {
                 setError(err.response.data.detail || "Login failed");
             } else if (err.request) {
                 setError("No response from server. Please try again.");
             } else {
-                setError("An error occurred. Please try again.");
+                setError(`Authentication error: ${err.message}`);
             }
-            console.error("Login error:", err);
         }
     };
 
     const handleGoogleSignIn = async () => {
         try {
             const result = await signInWithPopup(auth, googleprovider);
-                
             const user = result.user;
             
-            // Send the Firebase token to backend
             const firebaseToken = await user.getIdToken();
             
-            // get JWT after verifying token
             const response = await axiosClient.post('/login/google', {
                 firebase_token: firebaseToken
             });
             
-            localStorage.setItem('accessToken', response.data.access_token);
-            localStorage.setItem('refreshToken', response.data.refresh_token);
-            
-            console.log("Google login successful");
-            navigate('/home');
+            if (response.data && response.data.access_token && response.data.refresh_token) {
+                // Store tokens
+                setAuthTokens(response.data.access_token, response.data.refresh_token);
+                
+                // Verify token storage before navigation
+                const verifyToken = localStorage.getItem('access_token');
+                if (!verifyToken) {
+                    throw new Error('Token storage failed');
+                }
+                
+                console.log("Google login successful - Token stored:", !!verifyToken);
+                navigate('/home');
+            } else {
+                throw new Error('Invalid response format from server');
+            }
             
         } catch (error) {
-            console.error("Google sign-in error:", error);
-            setError("Google sign-in failed. Please try again.");
+            console.error("Google sign-in error details:", error);
+            setError(`Google sign-in failed: ${error.message}`);
         }
     };
-
+    
     return (
         <Container maxWidth="xs">
             <CssBaseline />

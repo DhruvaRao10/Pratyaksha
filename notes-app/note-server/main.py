@@ -1,16 +1,37 @@
 import models
-import schema
+
+from schema import (
+    TokenSchema,
+    TokenCreate,
+    UserCreate,
+    Passchange,
+    GoogleAuthRequest,
+    PdfDocumentResponse,
+    VideoDocumentCreate,
+    VideoDocumentResponse,
+    LoginDetails,
+)
 import jwt
-from datetime import datetime
+from datetime import datetime, timezone
 from models import User, TokenTable
 from database import Base, engine, sessionLocal
 from sqlalchemy.orm import Session
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import (
+    FastAPI,
+    Depends,
+    HTTPException,
+    status,
+    File,
+    UploadFile,
+    Form,
+    BackgroundTasks,
+)
 from fastapi.security import OAuth2PasswordBearer
 from auth_bearer import JWTBearer
 from functools import wraps
 from utils import (
     create_access_token,
+    decode_access_token,
     create_refresh_token,
     verify_password,
     get_hashed_password,
@@ -20,7 +41,15 @@ import firebase_admin
 from firebase_admin import credentials, auth
 from schema import TokenSchema
 import logging
+import boto3
+from botocore.exceptions import ClientError
+import os
+from dotenv import load_dotenv
+from RAG import RAGPipeline
+from videoProcessor import YoutubeProcessor
 
+
+load_dotenv()
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -29,11 +58,11 @@ logger = logging.getLogger(__name__)
 ACCESS_TOKEN_EXPIRE = 90
 REFRESH_TOKEN_EXPIRE = 60 * 24 * 7
 
-JWT_SECRET_KEY = "eyJhbGciOiJIUzI1NiJ9.eyJSb2xlIjoiQWRtaW4iLCJJc3N1ZXIiOiJJc3N1ZXIiLCJVc2VybmFtZSI6IkphdmFJblVzZSIsImV4cCI6MTcyOTM5ODE2MSwiaWF0IjoxNzI5Mzk4MTYxfQ.psKzl2mOOl4EWNWKLxFxYhZ0AoQMOdIddTPNG6boaGw"
+JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY")
+JWT_REFRESH_SECRET_KEY = os.getenv("JWT_REFRESH_SECRET_KEY")
 ALGORITHM = "HS256"
-JWT_REFRESH_SECRET_KEY = "eyJhbGciOiJIUzI1NiJ9.eyJSb2xlIjoiQWRtaW4iLCJJc3N1ZXIiOiJJc3N1ZXIiLCJVc2VybmFtZSI6IkphdmFJblVzZSIsImV4cCI6MTcyOTM5ODI0OCwiaWF0IjoxNzI5Mzk4MjQ4fQ.xvV1MAm6GHuBZrN7QqOoG1Z4bzBI2WpwqrfA4B9tntg"
 
-
+llama_api_key = os.getenv("LLAMA_APIKEY")
 Base.metadata.create_all(engine)
 
 
@@ -41,6 +70,14 @@ cred = credentials.Certificate(
     "./intuitnote-2342a-firebase-adminsdk-ia7wu-e8ccda4780.json"
 )
 firebase_admin.initialize_app(cred)
+
+s3_client = boto3.client(
+    "s3",
+    aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+    aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
+    region_name=os.getenv("AWS_REGION"),
+)
+BUCKET_NAME = os.getenv("AWS_BUCKET_NAME")
 
 
 def get_session():
@@ -64,7 +101,7 @@ app.add_middleware(
 
 
 @app.post("/register")
-def register_user(user: schema.UserCreate, session: Session = Depends(get_session)):
+def register_user(user: UserCreate, session: Session = Depends(get_session)):
     print("Entering register")
     existing_user = session.query(models.User).filter_by(email=user.email).first()
     if existing_user:
@@ -83,8 +120,8 @@ def register_user(user: schema.UserCreate, session: Session = Depends(get_sessio
     return {"message": "user created successfully"}
 
 
-@app.post("/login", response_model=schema.TokenSchema)
-def login(request: schema.LoginDetails, db: Session = Depends(get_session)):
+@app.post("/login", response_model=TokenSchema)
+def login(request: LoginDetails, db: Session = Depends(get_session)):
     user = db.query(User).filter(User.email == request.email).first()
     if user is None:
         raise HTTPException(
@@ -97,7 +134,9 @@ def login(request: schema.LoginDetails, db: Session = Depends(get_session)):
         )
 
     access = create_access_token(user.id)
+    print(access)
     refresh = create_refresh_token(user.id)
+    print(refresh)
 
     token_db = models.TokenTable(
         user_id=user.id, access_token=access, refresh_token=refresh, status=True
@@ -108,14 +147,10 @@ def login(request: schema.LoginDetails, db: Session = Depends(get_session)):
     return {"access_token": access, "refresh_token": refresh}
 
 
-@app.post("/login/google", response_model=schema.TokenSchema)
-async def google_login(
-    request: schema.GoogleAuthRequest, db: Session = Depends(get_session)
-):
+@app.post("/login/google", response_model=TokenSchema)
+async def google_login(request: GoogleAuthRequest, db: Session = Depends(get_session)):
     try:
-        logger.info(
-            f"Received token: {request.firebase_token[:10]}..."
-        )  
+        logger.info(f"Received token: {request.firebase_token[:10]}...")
 
         # Verify the Firebase token
         decoded_token = auth.verify_id_token(request.firebase_token)
@@ -182,7 +217,7 @@ def getusers(
 
 
 @app.post("/passchange")
-def passchange(request: schema.Passchange, db: Session = Depends(get_session)):
+def passchange(request: Passchange, db: Session = Depends(get_session)):
     user = db.query(models.User).filter(models.User.email == request.email).first()
 
     if user is None:
@@ -211,7 +246,7 @@ def logout(dependencies=Depends(JWTBearer()), db: Session = Depends(get_session)
     info = []
     for record in token_record:
         print("record", record)
-        if (datetime.utcnow() - record.created_date).days > 1:
+        if (datetime.now(tz=timezone.utc) - record.created_date).days > 1:
             info.append(record.user_id)
 
     if info:
@@ -231,6 +266,248 @@ def logout(dependencies=Depends(JWTBearer()), db: Session = Depends(get_session)
         return {"message": "logout successfully"}
 
 
+@app.post("/pdf-extract", response_model=PdfDocumentResponse)
+async def upload_pdf(
+    background_tasks: BackgroundTasks,
+    file: UploadFile = File(...),
+    user_id: str = Form(...),
+    db: Session = Depends(get_session),
+    dependencies=Depends(JWTBearer()),
+):
+    try:
+        logger.info(f"Attempting upload to bucket: {BUCKET_NAME}")
+        logger.info(f"Region: {os.getenv('AWS_REGION')}")
+
+        # listing all buckets to verify credentials and access
+        try:
+            response = s3_client.list_buckets()
+            available_buckets = [bucket["Name"] for bucket in response["Buckets"]]
+            logger.info(f"Available buckets: {available_buckets}")
+
+            if BUCKET_NAME not in available_buckets:
+                logger.error(f"Bucket {BUCKET_NAME} not found in available buckets!")
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Bucket {BUCKET_NAME} not found in your AWS account",
+                )
+        except ClientError as e:
+            logger.error(f"Error listing buckets: {str(e)}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Error accessing AWS: {str(e)}",
+            )
+
+        # Generate a unique S3 key
+        timestamp = datetime.now(tz=timezone.utc).strftime("%Y%m%d_%H%M%S")
+        s3_key = f"pdfs/user_{user_id}/{timestamp}_{file.filename}"
+
+        # Attempt upload
+        try:
+            s3_client.upload_fileobj(
+                file.file,
+                BUCKET_NAME,
+                s3_key,
+                ExtraArgs={"ContentType": "application/pdf", "ACL": "private"},
+            )
+            logger.info(f"Successfully uploaded file to {s3_key}")
+        except ClientError as e:
+            error_message = f"S3 Upload Error: {str(e)}"
+            logger.error(error_message)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=error_message
+            )
+
+        # Generate S3 URL
+        s3_url = (
+            f"https://{BUCKET_NAME}.s3.{os.getenv('AWS_REGION')}.amazonaws.com/{s3_key}"
+        )
+
+        # Create database record
+        pdf_doc = models.PdfDocument(
+            user_id=int(user_id),
+            file_name=file.filename,
+            s3_key=s3_key,
+            s3_url=s3_url,
+            file_size=file.size,
+            mime_type=file.content_type,
+            upload_date=datetime.now(tz=timezone.utc),
+            processing_status="pending",
+        )
+
+        db.add(pdf_doc)
+        db.commit()
+        db.refresh(pdf_doc)
+
+        background_tasks.add_task(
+            process_pdf_background,
+            s3_key=s3_key,
+            document_id=str(pdf_doc.id),
+            user_id=user_id,
+        )
+
+        return pdf_doc
+    except Exception as e:
+        logger.error(f"Upload failed: {str(e)}")
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Upload failed: {str(e)}",
+        )
+
+
+async def process_pdf_background(s3_key: str, document_id: str, user_id: str):
+    try:
+        # Initialize RAG pipeline with AWS credentials
+        rag = RAGPipeline(
+            aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+            aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
+            aws_region=os.getenv("AWS_REGION"),
+        )
+
+        # Use async context manager
+        async with rag:
+            # Process PDF directly from S3
+            metadata = {
+                "user_id": user_id,
+                "upload_date": datetime.now(tz=timezone.utc).isoformat(),
+            }
+
+            success = await rag.process_pdf_from_s3(
+                bucket=os.getenv("AWS_BUCKET_NAME"),
+                key=s3_key,
+                doc_id=document_id,
+                metadata=metadata,
+            )
+
+            # Update database status
+            db = sessionLocal()
+            try:
+                pdf_doc = db.query(models.PdfDocument).filter_by(id=document_id).first()
+                if pdf_doc:
+                    pdf_doc.processing_status = "completed" if success else "failed"
+                    db.commit()
+            finally:
+                db.close()
+
+    except Exception as e:
+        logger.error(f"PDF processing failed: {str(e)}")
+        # Update database with error status
+        db = sessionLocal()
+        try:
+            pdf_doc = db.query(models.PdfDocument).filter_by(id=document_id).first()
+            if pdf_doc:
+                pdf_doc.processing_status = "failed"
+                pdf_doc.error_message = str(e)
+                db.commit()
+        finally:
+            db.close()
+
+
+@app.post("/video-extract", response_model=VideoDocumentResponse)
+async def process_youtube_video(
+    video: VideoDocumentCreate,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_session),
+    dependencies=Depends(JWTBearer()),
+):
+    try:
+        # Create initial database record
+        video_doc = models.VideoDocument(
+            user_id=video.user_id,
+            url=str(video.url),
+            title=video.title or "",
+            s3_key="pending",
+            processing_status="pending",
+            transcript_status="pending",
+            upload_date=datetime.now(tz=timezone.utc),
+        )
+
+        db.add(video_doc)
+        db.commit()
+        db.refresh(video_doc)
+
+        # Add background task for processing
+        background_tasks.add_task(
+            process_video_background,
+            url=str(video.url),
+            document_id=str(video_doc.id),
+            user_id=str(video.user_id),
+        )
+
+        return video_doc
+
+    except Exception as e:
+        logger.error(f"Video processing request failed: {str(e)}")
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Video processing failed: {str(e)}",
+        )
+
+
+async def process_video_background(url: str, document_id: str, user_id: str):
+    try:
+        # Initialize processors
+        youtube_processor = YouTubeProcessor(
+            aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+            aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
+            aws_region=os.getenv("AWS_REGION"),
+            bucket_name=os.getenv("AWS_BUCKET_NAME"),
+        )
+
+        # Process video
+        result = await youtube_processor.process_video(url, user_id, document_id)
+
+        # Initialize RAG pipeline
+        rag = RAGPipeline(
+            aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+            aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
+            aws_region=os.getenv("AWS_REGION"),
+        )
+
+        # Process transcript through RAG pipeline
+        async with rag:
+            metadata = {
+                "user_id": user_id,
+                "upload_date": datetime.now(tz=timezone.utc).isoformat(),
+                "video_url": url,
+                "video_title": result["title"],
+            }
+
+            success = await rag.process_pdf_from_s3(
+                bucket=os.getenv("AWS_BUCKET_NAME"),
+                key=result["transcript_key"],
+                doc_id=document_id,
+                metadata=metadata,
+            )
+
+        # Update database
+        db = sessionLocal()
+        try:
+            video_doc = db.query(models.VideoDocument).filter_by(id=document_id).first()
+            if video_doc:
+                video_doc.processing_status = "completed" if success else "failed"
+                video_doc.transcript_status = "completed"
+                video_doc.s3_key = result["transcript_key"]
+                video_doc.title = result["title"]
+                video_doc.duration = result["duration"]
+                db.commit()
+        finally:
+            db.close()
+
+    except Exception as e:
+        logger.error(f"Video processing failed: {str(e)}")
+        db = sessionLocal()
+        try:
+            video_doc = db.query(models.VideoDocument).filter_by(id=document_id).first()
+            if video_doc:
+                video_doc.processing_status = "failed"
+                video_doc.error_message = str(e)
+                db.commit()
+        finally:
+            db.close()
+
+
 def token_required(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
@@ -240,7 +517,9 @@ def token_required(func):
         data = (
             kwargs["session"]
             .query(models.TokenTable)
-            .filter_by(user_id=user_id, access_toke=kwargs["dependencies"], status=True)
+            .filter_by(
+                user_id=user_id, access_token=kwargs["dependencies"], status=True
+            )
             .first()
         )
         if data:
