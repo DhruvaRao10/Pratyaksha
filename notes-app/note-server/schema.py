@@ -49,29 +49,25 @@ class PdfDocumentResponse(BaseModel):
 
     class Config:
         from_attributes = True
-        
+
+
 class VideoDocumentCreate(BaseModel):
     url: HttpUrl
-    user_id: int 
+    user_id: int
     title: Optional[str] = None
-    
+
 
 class VideoDocumentResponse(BaseModel):
     id: Optional[int] = None
-    user_id: int 
+    user_id: int
     url: HttpUrl
-    title: str 
-    s3_key: str 
+    title: str
+    s3_key: str
     s3_url: Optional[HttpUrl] = None
-    upload_date: Optional[datetime] = None 
-    processing_status: str 
-    transcript_status: str 
-    duration: Optional[float] = None 
-    
-    
+    upload_date: Optional[datetime] = None
+    processing_status: str
+    transcript_status: str
+    duration: Optional[float] = None
+
     class Config:
         from_attributes = True
-        
-        
-    
-    

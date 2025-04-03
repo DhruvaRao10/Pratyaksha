@@ -1,5 +1,4 @@
 import models
-
 from schema import (
     TokenSchema,
     TokenCreate,
@@ -11,6 +10,7 @@ from schema import (
     VideoDocumentResponse,
     LoginDetails,
 )
+from pathlib import Path
 import jwt
 from datetime import datetime, timezone
 from models import User, TokenTable
@@ -61,6 +61,10 @@ REFRESH_TOKEN_EXPIRE = 60 * 24 * 7
 JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY")
 JWT_REFRESH_SECRET_KEY = os.getenv("JWT_REFRESH_SECRET_KEY")
 ALGORITHM = "HS256"
+
+
+# UPLOAD_DIR = Path("uploads")
+# UPLOAD_DIR.mkdir(exist_ok=True)
 
 llama_api_key = os.getenv("LLAMA_APIKEY")
 Base.metadata.create_all(engine)
@@ -412,11 +416,14 @@ async def process_youtube_video(
 ):
     try:
         # Create initial database record
+        timestamp = datetime.now(tz=timezone.utc).strftime("%Y%m%d_%H%M%S")
+        temp_s3_key = f"videos/user_{video.user_id}/pending_{timestamp}"
+
         video_doc = models.VideoDocument(
             user_id=video.user_id,
             url=str(video.url),
             title=video.title or "",
-            s3_key="pending",
+            s3_key=temp_s3_key,
             processing_status="pending",
             transcript_status="pending",
             upload_date=datetime.now(tz=timezone.utc),
@@ -448,7 +455,7 @@ async def process_youtube_video(
 async def process_video_background(url: str, document_id: str, user_id: str):
     try:
         # Initialize processors
-        youtube_processor = YouTubeProcessor(
+        youtube_processor = YoutubeProcessor(
             aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
             aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
             aws_region=os.getenv("AWS_REGION"),

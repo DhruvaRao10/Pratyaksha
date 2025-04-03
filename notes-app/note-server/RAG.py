@@ -50,6 +50,8 @@ class RAGPipeline:
         aws_access_key_id: Optional[str] = None,
         aws_secret_access_key: Optional[str] = None,
         aws_region: Optional[str] = None,
+        base_model: str = "google/flan-t5-small",
+        lora_adapter_path: str = "./summarization-lora-finetuned/final_model",
     ):
         """
         Initialize the RAG Pipeline with Weaviate, LlamaIndex, and MiniLM.
@@ -81,6 +83,20 @@ class RAGPipeline:
 
         # Initialize LLM (Ollama running Llama2)
         self.llm = Ollama(model="llama2", temperature=0.1)
+
+        # self.tokenizer = AutoTokenizer.from_pretrained(base_model)
+        # base_model = AutoModelForSeq2SeqLM.from_pretrained(
+        #     base_model,
+        #     torch_dtype=torch.float16,
+        #     device_map="auto"
+        # )
+
+        # # Load LoRA adapters
+        # self.llm = PeftModel.from_pretrained(
+        #     base_model,
+        #     lora_adapter_path,
+        #     is_trainable=False
+        # )
 
         # Initialize vector store
         self.vector_store = WeaviateVectorStore(
@@ -319,6 +335,7 @@ class RAGPipeline:
             logger.info("Step 2: Extracting text from PDF")
             text = self._extract_text_from_pdf_bytes(pdf_bytes)
             logger.info(f"Extracted text length: {len(text)}")
+            print(text)
 
             if not text:
                 logger.error(f"No text extracted from PDF {key}")
@@ -356,6 +373,7 @@ class RAGPipeline:
                 self.index = index
                 logger.info("Instance index updated")
 
+                print(document)
                 return True
             except Exception as e:
                 logger.error(f"Error in indexing step: {str(e)}", exc_info=True)

@@ -21,7 +21,7 @@ const Logout = () => {
     return (
         <>
             <Container maxWidth="xs">
-                    <Typography variant="h5">Logout Hope you will be back soon</Typography>
+                    <Typography>Logout Hope you will be back soon</Typography>
             </Container>
         </>
     );
