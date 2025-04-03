@@ -1,0 +1,171 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --mantine-color-primary: theme('colors.violet.600');
+}
+
+/* Background Patterns */
+.bg-mesh-gradient {
+  background-color: #fafafa;
+  background-image: 
+    radial-gradient(at 40% 20%, rgba(167, 139, 250, 0.1) 0px, transparent 50%),
+    radial-gradient(at 80% 0%, rgba(236, 72, 153, 0.1) 0px, transparent 50%),
+    radial-gradient(at 0% 50%, rgba(99, 102, 241, 0.1) 0px, transparent 50%);
+  background-attachment: fixed;
+}
+
+/* Floating Animations */
+@keyframes float {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  25% { transform: translate(10px, -10px) rotate(2deg); }
+  50% { transform: translate(0, -20px) rotate(0deg); }
+  75% { transform: translate(-10px, -10px) rotate(-2deg); }
+}
+
+.floating-shape {
+  animation: float 8s ease-in-out infinite;
+}
+
+.floating-shape-delayed {
+  animation: float 8s ease-in-out infinite;
+  animation-delay: -4s;
+}
+
+/* Glass Card Effects */
+.glass-card {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px rgba(31, 38, 135, 0.1);
+}
+
+.glass-text {
+  text-shadow: 0 1px 1px rgba(255, 255, 255, 0.5);
+}
+
+/* Custom Shapes */
+.rounded-blob {
+  border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+}
+
+/* Gradient Text Animation */
+.animate-gradient-text {
+  background: linear-gradient(
+    to right,
+    #9333ea,
+    #ec4899,
+    #3b82f6,
+    #9333ea
+  );
+  background-size: 300% auto;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: gradient 6s linear infinite;
+}
+
+@keyframes gradient {
+  to {
+    background-position: 300% center;
+  }
+}
+
+/* Upload Form Specific Styles */
+.upload-dropzone {
+  @apply transition-all duration-300 border-2 border-dashed rounded-xl p-8;
+}
+
+.upload-dropzone.active {
+  @apply border-purple-500 bg-purple-50;
+}
+
+/* Progress Bar Animation */
+@keyframes progress-pulse {
+  0%, 100% { transform: scaleY(1); }
+  50% { transform: scaleY(0.8); }
+}
+
+.progress-bar-animated {
+  animation: progress-pulse 1s ease-in-out infinite;
+  transform-origin: center;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(247, 248, 249, 0.8);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(147, 51, 234, 0.3);
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(147, 51, 234, 0.5);
+}
+
+/* Glass morphism effects */
+.glass-morphism {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Gradient text animation */
+.animate-gradient-text {
+  background: linear-gradient(
+    to right,
+    #c084fc,
+    #e879f9,
+    #818cf8,
+    #c084fc
+  );
+  background-size: 200% auto;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: gradient 3s linear infinite;
+}
+
+@keyframes gradient {
+  to {
+    background-position: 200% center;
+  }
+}
+
+/* Additional smooth transitions */
+.transition-smooth {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Enhanced dropzone effects */
+.dropzone-focus {
+  @apply ring-4 ring-purple-100 ring-opacity-50;
+}
+
+/* Gradient overlay for thumbnails */
+.thumbnail-overlay {
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.5) 100%);
+}
+
+/* Improved glass effect */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* Soft shadow effect */
+.shadow-soft {
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.05);
+} 
