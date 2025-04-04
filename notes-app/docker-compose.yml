@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  weaviate_anon:
+    command:
+      - --host
+      - 0.0.0.0
+      - --port
+      - '5000'
+      - --scheme
+      - http
+    image: cr.weaviate.io/semitechnologies/weaviate:1.27.2
+    ports:
+      - 5000:5000
+      - 50051:50051
+    restart: on-failure:0
+    environment:
+      LLAMA_APIKEY: LA-adda57987e544443af4b40fcbd5fadd4911a0a69f5df40e7b4be853bb943fbcf
+      # COHERE_APIKEY: 
+      # HUGGINGFACE_APIKEY: $HUGGINGFACE_APIKEY  # For Hugging Face models (if used)
+      QUERY_DEFAULTS_LIMIT: 25
+      AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: 'true'
+      AUTHENTICATION__OIDC__ENABLED: 'false'
+      # AUTHENTICATION_APIKEY_ENABLED: 'true'   
+      # AUTHENTICATION_APIKEY_ALLOWED_KEYS: 'your-api-key'  
+      PERSISTENCE_DATA_PATH: '/var/lib/weaviate'
+      DEFAULT_VECTORIZER_MODULE: 'none'
+      ENABLE_MODULES: 'text2vec-cohere,text2vec-huggingface,text2vec-openai,generative-openai,generative-cohere'
+      BACKUP_FILESYSTEM_PATH: '/var/lib/weaviate/backups'
+      CLUSTER_HOSTNAME: 'cluster-init'
