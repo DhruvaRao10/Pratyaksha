@@ -1,1 +1,4 @@
 /node_modules
+.env
+/venv
+intuitnote-2342a-firebase-adminsdk-ia7wu-e8ccda4780.json
