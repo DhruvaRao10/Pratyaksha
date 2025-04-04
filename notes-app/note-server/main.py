@@ -376,7 +376,7 @@ async def process_pdf_background(s3_key: str, document_id: str, user_id: str):
                 "upload_date": datetime.now(tz=timezone.utc).isoformat(),
             }
 
-            success = await rag.process_pdf_from_s3(
+            response = await rag.process_pdf_from_s3(
                 bucket=os.getenv("AWS_BUCKET_NAME"),
                 key=s3_key,
                 doc_id=document_id,
@@ -388,8 +388,9 @@ async def process_pdf_background(s3_key: str, document_id: str, user_id: str):
             try:
                 pdf_doc = db.query(models.PdfDocument).filter_by(id=document_id).first()
                 if pdf_doc:
-                    pdf_doc.processing_status = "completed" if success else "failed"
+                    pdf_doc.processing_status = "completed" if response else "failed"
                     db.commit()
+                return response
             finally:
                 db.close()
 
