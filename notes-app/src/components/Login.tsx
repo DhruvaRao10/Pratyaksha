@@ -132,7 +132,7 @@ export default function SignIn() {
             Welcome Back
           </Title>
           <Text c="dimmed" size="sm" align="center" mb={30}>
-            Sign in to your Notes App account
+            Sign in to your Intuit Notes account
           </Text>
 
           <Paper withBorder shadow="md" p={30} radius="md" className="bg-white/80 backdrop-blur-lg">

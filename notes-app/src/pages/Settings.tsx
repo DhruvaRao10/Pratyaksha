@@ -65,7 +65,7 @@ export function SettingsPage() {
                   Settings
                 </Title>
                 <Text c="dimmed" size="lg" className="max-w-lg mx-auto">
-                  Customize your Notes App experience
+                  Customize your Intuit Notes experience
                 </Text>
               </div>
               

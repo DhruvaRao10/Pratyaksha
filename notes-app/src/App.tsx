@@ -6,18 +6,16 @@ import { HomePage } from './pages/Home';
 import { UploadPage } from './pages/Upload';
 import { YouTubePage } from './pages/YouTube';
 import { SettingsPage } from './pages/Settings';
+import { AnalysisHistoryPage } from './pages/AnalysisHistory';
 import Login from './components/Login';
 import Register from './components/Reg';
 import { theme } from './theme';
 import './styles/navigation.css';
 
-// Auth protection helper component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  // Check if user is authenticated - simplified version for demo
   const isAuthenticated = localStorage.getItem('access_token') !== null;
   
   if (!isAuthenticated) {
-    // Redirect to login if not authenticated
     return <Navigate to="/login" replace />;
   }
   
@@ -55,6 +53,15 @@ export default function App() {
           element={
             <ProtectedRoute>
               <YouTubePage />
+            </ProtectedRoute>
+          } 
+        />
+        
+        <Route 
+          path="/history" 
+          element={
+            <ProtectedRoute>
+              <AnalysisHistoryPage />
             </ProtectedRoute>
           } 
         />

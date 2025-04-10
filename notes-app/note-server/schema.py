@@ -71,3 +71,18 @@ class VideoDocumentResponse(BaseModel):
 
     class Config:
         from_attributes = True
+        
+        
+class AnalysisHistory(BaseModel):
+    id: Optional[int] = None
+    user_id: int 
+    doc_id: str
+    file_name: str 
+    s3_url: Optional[HttpUrl] = None
+    analysis: str
+    processing_status: Optional[str] = "completed"
+    timestamp: Optional[datetime] = None
+    
+    class Config:
+        from_attributes = True
+

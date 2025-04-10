@@ -69,7 +69,7 @@ class RAGPipeline:
         aws_region: Optional[str] = None,
         base_model: str = "google/flan-t5-small",
         lora_adapter_path: str = "./summarization-lora-finetuned/final_model",
-        openrouter_model: str = "meta-llama/llama-3-8b-instruct:free",  # Changed to a more stable free model
+        openrouter_model: str = "meta-llama/llama-3-8b-instruct:free", 
     ):
         """
         Initialize the RAG Pipeline with Weaviate, LlamaIndex, and MiniLM.
@@ -327,7 +327,8 @@ class RAGPipeline:
             1. Provide a concise summary (3-5 sentences)
             2. Extract the 5-7 most important concepts or topics
             3. Explain each key concept in simple terms
-            4. Retain important terminology and technical language from the original
+            4. Retain important terminology and technical language from the original and explain the technical language in detail as well 
+            5. If you detect any Math in the pdf break that down intuitively 
 
             DOCUMENT:
             {full_text[:max_text_length]}
@@ -338,8 +339,8 @@ class RAGPipeline:
             [Your summary here]
             
             KEY CONCEPTS:
-            1. [Concept 1]: [Simple explanation]
-            2. [Concept 2]: [Simple explanation]
+            1. [Concept 1]: [Detailed explanation]
+            2. [Concept 2]: [Detailed explanation]
             ...
             """
             # llama index assistant creation 

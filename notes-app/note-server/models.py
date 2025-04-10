@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, Float, String, DateTime, Boolean, ForeignKey
+from sqlalchemy import Column, Integer, Float, String, DateTime, Boolean, ForeignKey, Text
 from sqlalchemy.orm import relationship
 from database import Base
 from datetime import datetime, timezone
@@ -66,3 +66,16 @@ class VideoDocument(Base):
     transcript_status = Column(String(20), default="pending")
     duration = Column(Float)
     error_message = Column(String(1000))
+    
+    
+class History(Base):
+    __tablename__ = "notes_history" 
+    id = Column(Integer, primary_key=True, index=True) 
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False) 
+    doc_id = Column(String(255), nullable=False)
+    file_name = Column(String(255), nullable=False)
+    s3_url = Column(String(1000))
+    analysis = Column(Text)  
+    processing_status = Column(String(20), default="completed")
+    timestamp = Column(DateTime, default=datetime.now(tz=timezone.utc))
+    

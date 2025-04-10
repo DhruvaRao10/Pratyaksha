@@ -9,6 +9,7 @@ from schema import (
     VideoDocumentCreate,
     VideoDocumentResponse,
     LoginDetails,
+    AnalysisHistory, 
 )
 from pathlib import Path
 import jwt
@@ -47,6 +48,7 @@ import os
 from dotenv import load_dotenv
 from RAG import RAGPipeline
 from videoProcessor import YoutubeProcessor
+from history import load_user_docs
 
 
 load_dotenv()
@@ -388,7 +390,22 @@ async def process_pdf_background(s3_key: str, document_id: str, user_id: str):
             try:
                 pdf_doc = db.query(models.PdfDocument).filter_by(id=document_id).first()
                 if pdf_doc:
-                    pdf_doc.processing_status = "completed" if response else "failed"
+                    if response and "analysis" in response:
+                        pdf_doc.processing_status = "completed"
+                        
+                        # Save the analysis to history
+                        analysis_history = models.History(
+                            user_id=int(user_id),
+                            doc_id=document_id,
+                            file_name=pdf_doc.file_name,
+                            s3_url=pdf_doc.s3_url,
+                            analysis=response["analysis"],
+                            processing_status="completed",
+                            timestamp=datetime.now(tz=timezone.utc)
+                        )
+                        db.add(analysis_history)
+                    else:
+                        pdf_doc.processing_status = "failed"
                     db.commit()
                 return response
             finally:
@@ -450,6 +467,58 @@ async def process_youtube_video(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Video processing failed: {str(e)}",
+        )
+        
+        
+@app.post("/analysis-history", response_model=AnalysisHistory)
+async def store_history(
+    user_id: int, 
+    doc_id: str, 
+    file_name: str, 
+    s3_url: str, 
+    analysis: str,
+    db: Session = Depends(get_session)
+):
+    try:
+        analysis_history = models.History(
+            user_id=int(user_id),
+            doc_id=doc_id,
+            file_name=file_name,
+            s3_url=s3_url,
+            analysis=analysis,
+            processing_status="completed",
+            timestamp=datetime.now(tz=timezone.utc)
+        )
+        
+        db.add(analysis_history)
+        db.commit()
+        db.refresh(analysis_history)
+        
+        return analysis_history
+    except Exception as e:
+        logger.error(f"Analysis storing request failed: {str(e)}")
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Analysis storing failed: {str(e)}",
+        )
+    
+
+
+@app.get("/user/{user_id}/analysis-history")
+async def get_user_analysis_history(
+    user_id: int,
+    db: Session = Depends(get_session),
+    dependencies=Depends(JWTBearer())
+):
+    try:
+        history_entries = load_user_docs(db, user_id)
+        return history_entries
+    except Exception as e:
+        logger.error(f"Error retrieving analysis history: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error retrieving analysis history: {str(e)}",
         )
 
 
@@ -537,3 +606,27 @@ def token_required(func):
             return {"msg": "Token blocked"}
 
     return wrapper
+
+
+@app.get("/analysis-history/{doc_id}")
+async def get_document_analysis(
+    doc_id: str,
+    db: Session = Depends(get_session),
+    dependencies=Depends(JWTBearer())
+):
+    try:
+        history_entry = db.query(models.History).filter_by(doc_id=doc_id).first()
+        if not history_entry:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Analysis for document {doc_id} not found",
+            )
+        return history_entry
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error retrieving document analysis: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error retrieving document analysis: {str(e)}",
+        )

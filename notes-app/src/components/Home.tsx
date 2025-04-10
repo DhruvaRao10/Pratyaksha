@@ -34,7 +34,7 @@ const Home = () => {
             className="text-center mb-12"
           >
             <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 bg-clip-text text-transparent">
-              Welcome to Notes App
+              Welcome to Intuit Notes
             </h1>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
               Drop your files or paste YouTube links to get started

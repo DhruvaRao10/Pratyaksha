@@ -106,7 +106,7 @@ const Register = () => {
                         Create Account
                     </Title>
                     <Text c="dimmed" size="sm" align="center" mb={30}>
-                        Join Notes App and start organizing your thoughts
+                        Join Intuit Notes and start organizing your thoughts
                     </Text>
 
                     <Paper withBorder shadow="md" p={30} radius="md" className="bg-white/80 backdrop-blur-lg">

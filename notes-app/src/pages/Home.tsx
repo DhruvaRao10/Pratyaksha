@@ -44,7 +44,7 @@ export function HomePage() {
                     order={1}
                     className="text-4xl font-bold bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent"
                   >
-                    Welcome to Notes App
+                    Welcome to Intuit Notes
                   </Title>
                   <Text c="dimmed" mt="md" size="lg">
                     Transform your content into interactive notes

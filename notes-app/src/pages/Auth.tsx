@@ -75,7 +75,7 @@ export function AuthPage() {
     >
       <Container size={420} my={40}>
         <Title ta="center" className="bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">
-          Welcome to Notes App
+          Welcome to Intuit Notes
         </Title>
         <Text c="dimmed" size="sm" ta="center" mt={5}>
           {type === 'login' ? "Don't have an account? " : 'Already have an account? '}

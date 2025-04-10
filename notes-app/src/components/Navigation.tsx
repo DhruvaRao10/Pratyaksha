@@ -24,7 +24,8 @@ import {
   IconNotebook,
   IconChevronLeft,
   IconChevronRight,
-  IconMenu2
+  IconMenu2,
+  IconHistory
 } from '@tabler/icons-react';
 
 // Define types for better type safety
@@ -39,6 +40,7 @@ const NAV_ITEMS: NavItem[] = [
   { link: '/', label: 'Home', icon: IconHome },
   { link: '/upload', label: 'Upload PDF', icon: IconUpload },
   { link: '/youtube', label: 'YouTube Import', icon: IconBrandYoutube },
+  { link: '/history', label: 'Analysis History', icon: IconHistory },
   { link: '/settings', label: 'Settings', icon: IconSettings },
 ];
 
@@ -294,7 +296,7 @@ export function Navigation() {
               <IconNotebook size={22} />
             </ThemeIcon>
             <Text fw={700} size="lg" className="bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">
-              Notes App
+              Intuit Notes
             </Text>
           </AppShell.Section>
 
@@ -349,7 +351,7 @@ export function Navigation() {
         </ThemeIcon>
         {!collapsed && (
           <Text fw={700} size="lg" className="bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent collapse-transition">
-            Notes App
+            Intuit Notes
           </Text>
         )}
       </AppShell.Section>
