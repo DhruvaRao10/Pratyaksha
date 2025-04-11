@@ -15,7 +15,7 @@ services:
       - 50051:50051
     restart: on-failure:0
     environment:
-      LLAMA_APIKEY: LA-adda57987e544443af4b40fcbd5fadd4911a0a69f5df40e7b4be853bb943fbcf
+      LLAMA_APIKEY: ${LLAMA_APIKEY}
       # COHERE_APIKEY: 
       # HUGGINGFACE_APIKEY: $HUGGINGFACE_APIKEY  # For Hugging Face models (if used)
       QUERY_DEFAULTS_LIMIT: 25
@@ -28,3 +28,29 @@ services:
       ENABLE_MODULES: 'text2vec-cohere,text2vec-huggingface,text2vec-openai,generative-openai,generative-cohere'
       BACKUP_FILESYSTEM_PATH: '/var/lib/weaviate/backups'
       CLUSTER_HOSTNAME: 'cluster-init'
+      
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.4
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - xpack.security.enabled=false
+    ports:
+      - 9200:9200
+      - 9300:9300
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.11.4
+    container_name: kibana
+    ports:
+      - 5601:5601
+    environment:
+      - ELASTICSEARCH_HOSTS=http://localhost:9200
+    depends_on:
+      - elasticsearch
+
+volumes:
+  elasticsearch-data:

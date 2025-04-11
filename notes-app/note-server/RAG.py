@@ -29,6 +29,9 @@ from typing import List, Optional, Dict, Any
 import weaviate
 from weaviate.util import generate_uuid5
 from PyPDF2 import PdfReader
+from llama_index.readers.file import PyMuPDFReader
+import pymupdf
+import pymupdf4llm
 import logging
 from pathlib import Path
 import tempfile
@@ -56,7 +59,7 @@ class RAGPipeline:
                 self.weaviate_client.close()
         except Exception as e:
             logger.error(f"Error closing Weaviate client: {str(e)}")
-            
+
     def __init__(
         self,
         weaviate_url: str = "http://localhost:5000",
@@ -69,7 +72,7 @@ class RAGPipeline:
         aws_region: Optional[str] = None,
         base_model: str = "google/flan-t5-small",
         lora_adapter_path: str = "./summarization-lora-finetuned/final_model",
-        openrouter_model: str = "meta-llama/llama-3-8b-instruct:free", 
+        openrouter_model: str = "meta-llama/llama-4-scout:free",
     ):
         """
         Initialize the RAG Pipeline with Weaviate, LlamaIndex, and MiniLM.
@@ -152,7 +155,7 @@ class RAGPipeline:
                 # Create collection with properties
                 collection = self.weaviate_client.collections.create(
                     name=self.class_name,
-                    vectorizer_config=weaviate.config.Configure.Vectorizer.none(),  # we use our own embeddings
+                    vectorizer_config=weaviate.config.Configure.Vectorizer.none(),  
                     properties=[
                         weaviate.properties.Property(
                             name="content",
@@ -240,32 +243,40 @@ class RAGPipeline:
             raise
 
     def _extract_text_from_pdf_bytes(self, pdf_bytes: bytes) -> str:
-        """Extract text content from PDF bytes"""
+        """Extract text content from PDF bytes using pymupdf4llm for Markdown conversion."""
+        doc = None  # Initialize doc to None for the finally block
         try:
-            logger.info(f"Starting PDF text extraction from {len(pdf_bytes)} bytes")
-            text = ""
-            pdf_file = io.BytesIO(pdf_bytes)
-            pdf_reader = PdfReader(pdf_file)
-            logger.info(f"PDF has {len(pdf_reader.pages)} pages")
+            logger.info(
+                f"Starting PDF text extraction using pymupdf4llm from {len(pdf_bytes)} bytes"
+            )
 
-            for page_num, page in enumerate(pdf_reader.pages, 1):
-                try:
-                    page_text = page.extract_text()
-                    text += page_text + "\n"
-                    logger.info(
-                        f"Extracted {len(page_text)} characters from page {page_num}"
-                    )
-                except Exception as e:
-                    logger.error(
-                        f"Error extracting text from page {page_num}: {str(e)}"
-                    )
+            # --- FIX: Explicitly open the document from bytes using pymupdf ---
+            # Open the PDF directly from the bytes stream
+            doc = pymupdf.open(stream=pdf_bytes, filetype="pdf")
 
-            final_text = text.strip()
-            logger.info(f"Successfully extracted total of {len(final_text)} characters")
-            return final_text
+            # Pass the opened document object to pymupdf4llm
+            md_text = pymupdf4llm.to_markdown(doc)
+            # -----------------------------------------------------------------
+
+            if not md_text or len(md_text.strip()) < 10:
+                logger.warning(
+                    f"pymupdf4llm returned very short or empty text for the PDF."
+                )
+
+            logger.info(
+                f"Successfully extracted markdown text with length {len(md_text)} characters"
+            )
+            return md_text
         except Exception as e:
-            logger.error(f"Error in PDF text extraction: {str(e)}", exc_info=True)
-            raise
+            logger.error(
+                f"Error during pymupdf4llm text extraction: {str(e)}", exc_info=True
+            )
+            raise  # Re-raise the exception
+        finally:
+            # --- Ensure the document is closed ---
+            if doc:
+                doc.close()
+                logger.debug("PyMuPDF document closed.")
 
     def _ensure_weaviate_connected(self):
         """Ensure the Weaviate client is connected, reconnect if necessary"""
@@ -320,7 +331,7 @@ class RAGPipeline:
 
             full_text = " ".join([obj.properties["content"] for obj in results])
 
-            max_text_length = 4000 
+            max_text_length = 4000
 
             summary_prompt = f"""
             You are an expert document analyzer. Please analyze the following document and:
@@ -343,7 +354,7 @@ class RAGPipeline:
             2. [Concept 2]: [Detailed explanation]
             ...
             """
-            # llama index assistant creation 
+            # llama index assistant creation
             message = ChatMessage(role="user", content=summary_prompt)
 
             max_retries = 3
@@ -355,7 +366,7 @@ class RAGPipeline:
                     logger.info(
                         f"Attempt {retry_count + 1} to generate summary with OpenRouter"
                     )
-                    # streaming chat response 
+                    # streaming chat response
                     response = self.llm.stream_chat([message])
                     full_response = ""
 
@@ -444,7 +455,7 @@ class RAGPipeline:
                 filter_dict = {
                     "where_filter": {
                         "operator": "Equal",
-                        "path": ["doc_id"],  
+                        "path": ["doc_id"],
                         "valueString": doc_id,
                     }
                 }
@@ -548,7 +559,7 @@ class RAGPipeline:
         key: str,
         doc_id: str,
         metadata: Optional[Dict[str, Any]] = None,
-    ) -> bool:
+    ) -> Dict[str, Any]:
         try:
             logger.info(
                 f"Starting to process PDF from S3: bucket={bucket}, key={key}, doc_id={doc_id}"

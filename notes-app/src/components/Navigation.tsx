@@ -25,10 +25,10 @@ import {
   IconChevronLeft,
   IconChevronRight,
   IconMenu2,
-  IconHistory
+  IconHistory, 
+  IconSearch
 } from '@tabler/icons-react';
 
-// Define types for better type safety
 interface NavItem {
   link: string;
   label: string;
@@ -42,6 +42,8 @@ const NAV_ITEMS: NavItem[] = [
   { link: '/youtube', label: 'YouTube Import', icon: IconBrandYoutube },
   { link: '/history', label: 'Analysis History', icon: IconHistory },
   { link: '/settings', label: 'Settings', icon: IconSettings },
+  { link: '/search', label: 'Search', icon: IconSearch },
+
 ];
 
 // Separate styles creation

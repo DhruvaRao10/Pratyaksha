@@ -1,6 +1,6 @@
-from pydantic import BaseModel, HttpUrl
+from pydantic import BaseModel, HttpUrl, EmailStr, Field
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 
 
 class UserCreate(BaseModel):
@@ -71,18 +71,30 @@ class VideoDocumentResponse(BaseModel):
 
     class Config:
         from_attributes = True
-        
-        
+
+
 class AnalysisHistory(BaseModel):
     id: Optional[int] = None
-    user_id: int 
+    user_id: int
     doc_id: str
-    file_name: str 
+    file_name: str
     s3_url: Optional[HttpUrl] = None
     analysis: str
     processing_status: Optional[str] = "completed"
     timestamp: Optional[datetime] = None
-    
+
     class Config:
         from_attributes = True
 
+
+class ArxivSearchRequest(BaseModel):
+    query: str
+    categories: List[str] = []
+    page: int = 1
+    max_results: int = 10
+
+
+class ElasticSearchRequest(BaseModel):
+    query: str
+    page: int = 1
+    size: int = 10

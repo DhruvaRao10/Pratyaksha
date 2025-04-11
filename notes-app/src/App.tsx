@@ -7,6 +7,7 @@ import { UploadPage } from './pages/Upload';
 import { YouTubePage } from './pages/YouTube';
 import { SettingsPage } from './pages/Settings';
 import { AnalysisHistoryPage } from './pages/AnalysisHistory';
+import { SearchPage } from './pages/Search';
 import Login from './components/Login';
 import Register from './components/Reg';
 import { theme } from './theme';
@@ -75,7 +76,15 @@ export default function App() {
           } 
         />
         
-        {/* Catch-all route - redirect to home */}
+        <Route 
+          path="/search" 
+          element={
+            <ProtectedRoute>
+              <SearchPage />
+            </ProtectedRoute>
+          } 
+        />
+        
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </MantineProvider>

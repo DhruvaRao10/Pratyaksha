@@ -9,7 +9,9 @@ from schema import (
     VideoDocumentCreate,
     VideoDocumentResponse,
     LoginDetails,
-    AnalysisHistory, 
+    AnalysisHistory,
+    ArxivSearchRequest,
+    ElasticSearchRequest,
 )
 from pathlib import Path
 import jwt
@@ -49,6 +51,10 @@ from dotenv import load_dotenv
 from RAG import RAGPipeline
 from videoProcessor import YoutubeProcessor
 from history import load_user_docs
+import arxiv
+from elasticsearch import Elasticsearch, ApiError, AsyncElasticsearch
+import json
+from search import search_arxiv, search_elastic, index_arxiv_paper
 
 
 load_dotenv()
@@ -392,7 +398,7 @@ async def process_pdf_background(s3_key: str, document_id: str, user_id: str):
                 if pdf_doc:
                     if response and "analysis" in response:
                         pdf_doc.processing_status = "completed"
-                        
+
                         # Save the analysis to history
                         analysis_history = models.History(
                             user_id=int(user_id),
@@ -401,7 +407,7 @@ async def process_pdf_background(s3_key: str, document_id: str, user_id: str):
                             s3_url=pdf_doc.s3_url,
                             analysis=response["analysis"],
                             processing_status="completed",
-                            timestamp=datetime.now(tz=timezone.utc)
+                            timestamp=datetime.now(tz=timezone.utc),
                         )
                         db.add(analysis_history)
                     else:
@@ -468,16 +474,16 @@ async def process_youtube_video(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Video processing failed: {str(e)}",
         )
-        
-        
+
+
 @app.post("/analysis-history", response_model=AnalysisHistory)
 async def store_history(
-    user_id: int, 
-    doc_id: str, 
-    file_name: str, 
-    s3_url: str, 
+    user_id: int,
+    doc_id: str,
+    file_name: str,
+    s3_url: str,
     analysis: str,
-    db: Session = Depends(get_session)
+    db: Session = Depends(get_session),
 ):
     try:
         analysis_history = models.History(
@@ -487,13 +493,13 @@ async def store_history(
             s3_url=s3_url,
             analysis=analysis,
             processing_status="completed",
-            timestamp=datetime.now(tz=timezone.utc)
+            timestamp=datetime.now(tz=timezone.utc),
         )
-        
+
         db.add(analysis_history)
         db.commit()
         db.refresh(analysis_history)
-        
+
         return analysis_history
     except Exception as e:
         logger.error(f"Analysis storing request failed: {str(e)}")
@@ -502,14 +508,11 @@ async def store_history(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Analysis storing failed: {str(e)}",
         )
-    
 
 
 @app.get("/user/{user_id}/analysis-history")
 async def get_user_analysis_history(
-    user_id: int,
-    db: Session = Depends(get_session),
-    dependencies=Depends(JWTBearer())
+    user_id: int, db: Session = Depends(get_session), dependencies=Depends(JWTBearer())
 ):
     try:
         history_entries = load_user_docs(db, user_id)
@@ -610,9 +613,7 @@ def token_required(func):
 
 @app.get("/analysis-history/{doc_id}")
 async def get_document_analysis(
-    doc_id: str,
-    db: Session = Depends(get_session),
-    dependencies=Depends(JWTBearer())
+    doc_id: str, db: Session = Depends(get_session), dependencies=Depends(JWTBearer())
 ):
     try:
         history_entry = db.query(models.History).filter_by(doc_id=doc_id).first()
@@ -630,3 +631,57 @@ async def get_document_analysis(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error retrieving document analysis: {str(e)}",
         )
+
+
+# Elasticsearch client
+es_host = os.getenv("ELASTICSEARCH_HOST")
+es_client = Elasticsearch(hosts=[es_host])
+
+# Create the papers index 
+if not es_client.indices.exists(index="arxiv_papers"):
+    es_client.indices.create(
+        index="arxiv_papers",
+        body={
+            "mappings": {
+                "properties": {
+                    "id": {"type": "keyword"},
+                    "title": {"type": "text"},
+                    "authors": {"type": "text"},
+                    "summary": {"type": "text"},
+                    "published": {"type": "date"},
+                    "updated": {"type": "date"},
+                    "categories": {"type": "keyword"},
+                    "pdf_url": {"type": "keyword"},
+                    "html_url": {"type": "keyword"},
+                }
+            }
+        },
+    )
+
+
+# ArXiv Search endpoint
+@app.post("/search/arxiv")
+async def arxiv_search_endpoint(request: ArxivSearchRequest):
+    return await search_arxiv(
+        query=request.query,
+        categories=request.categories,
+        page=request.page,
+        max_results=request.max_results,
+    )
+
+
+# Elasticsearch Search endpoint
+@app.post("/search/elastic")
+async def elastic_search_endpoint(request: ElasticSearchRequest):
+    return await search_elastic(
+        query=request.query, page=request.page, size=request.size
+    )
+
+
+# Index ArXiv paper endpoint
+@app.post("/index/arxiv")
+async def index_arxiv_endpoint(request: dict):
+    arxiv_id = request.get("arxiv_id")
+    if not arxiv_id:
+        raise HTTPException(status_code=400, detail="ArXiv ID is required")
+    return await index_arxiv_paper(arxiv_id)
