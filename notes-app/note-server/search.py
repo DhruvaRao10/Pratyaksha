@@ -194,4 +194,4 @@ async def index_arxiv_paper(arxiv_id: str):
         logger.error(f"Error indexing ArXiv paper: {e}")
         raise HTTPException(
             status_code=500, detail=f"Error indexing ArXiv paper: {str(e)}"
-        )
+        )                         

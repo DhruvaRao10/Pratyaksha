@@ -14,11 +14,17 @@ from schema import (
     ElasticSearchRequest,
 )
 from pathlib import Path
+import httpx
+
 import jwt
 from datetime import datetime, timezone
 from models import User, TokenTable
 from database import Base, engine, sessionLocal
 from sqlalchemy.orm import Session
+from fastapi import FastAPI, Depends, Query
+from fastapi.responses import StreamingResponse
+
+
 from fastapi import (
     FastAPI,
     Depends,
@@ -105,7 +111,7 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=["http://localhost:3000", "http://localhost:8000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -637,7 +643,7 @@ async def get_document_analysis(
 es_host = os.getenv("ELASTICSEARCH_HOST")
 es_client = Elasticsearch(hosts=[es_host])
 
-# Create the papers index 
+# Create the papers index
 if not es_client.indices.exists(index="arxiv_papers"):
     es_client.indices.create(
         index="arxiv_papers",
@@ -678,10 +684,179 @@ async def elastic_search_endpoint(request: ElasticSearchRequest):
     )
 
 
-# Index ArXiv paper endpoint
 @app.post("/index/arxiv")
 async def index_arxiv_endpoint(request: dict):
     arxiv_id = request.get("arxiv_id")
     if not arxiv_id:
         raise HTTPException(status_code=400, detail="ArXiv ID is required")
     return await index_arxiv_paper(arxiv_id)
+
+
+@app.get("/openalex-search")
+async def openalex_search(query: str = Query(..., description="Search term")):
+    openalex_url = "https://api.openalex.org/works"
+    params = {
+        "search": query,
+        "sort": "cited_by_count:desc",
+        "per-page": 25,  
+    }
+
+    async with httpx.AsyncClient() as client:
+        response = await client.get(openalex_url, params=params)
+        response.raise_for_status()
+        data = response.json()
+
+    return data
+
+
+@app.get("/papers", dependencies=[Depends(JWTBearer())])
+async def get_papers(
+    query: str | None = Query(
+        None, alias="query", description="Keyword to search papers; omit for trending"
+    ),
+    task_filter: list[str] = Query(
+        ["machine-learning", "deep-learning", "artificial-intelligence"],
+        alias="task_filter",
+        description="List of task IDs to filter papers by",
+    ),
+):
+    base = "https://paperswithcode.com/api/v1"
+
+    if query:
+        url = f"{base}/papers/"
+        params = {"search": query, "page": 1, "per_page": 10}
+    else:
+        url = f"{base}/trending/"
+        params = {"page": 1, "per_page": 10}
+
+    async with httpx.AsyncClient() as client:
+        resp = await client.get(url, params=params, timeout=30.0)
+        resp.raise_for_status()
+        payload = resp.json()
+
+    results = payload.get("results", [])
+
+    filtered_results = []
+    async with httpx.AsyncClient() as client:
+        for paper in results:
+            paper_id = paper.get("id")
+            if paper_id:
+                task_url = f"{base}/papers/{paper_id}/tasks/"
+                task_resp = await client.get(task_url, timeout=10.0)
+                if task_resp.status_code == 200:
+                    tasks = task_resp.json().get("results", [])
+                    task_ids = [task.get("id") for task in tasks]
+                    if set(task_filter).intersection(task_ids):
+                        filtered_results.append(paper)
+
+    return [
+        {
+            "id": p["id"],
+            "arxiv_id": p["arxiv_id"],
+            "title": p["title"],
+            "abstract": p.get("abstract", ""),
+            "url_pdf": p.get("url_pdf"),
+            "url_abs": p.get("url_abs"),
+            "published_date": p.get("published"),
+            "repositories": p.get("repositories", []),
+            "datasets": p.get("datasets", []),
+        }
+        for p in filtered_results
+    ]
+
+
+@app.get("/user/{user_id}/pdfs")
+async def get_user_pdfs(
+    user_id: int, db: Session = Depends(get_session), dependencies=Depends(JWTBearer())
+):
+    try:
+        pdfs = db.query(models.PdfDocument).filter_by(user_id=user_id).all()
+        return [
+            {
+                "id": pdf.id,
+                "file_name": pdf.file_name,
+                "processing_status": pdf.processing_status,
+                "upload_date": pdf.upload_date.isoformat(),
+                "s3_url": pdf.s3_url,
+            }
+            for pdf in pdfs
+        ]
+    except Exception as e:
+        logger.error(f"Error retrieving user PDFs: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error retrieving user PDFs: {str(e)}",
+        )
+
+
+@app.get(
+    "/pdf/{doc_id}/content",
+    summary="Proxy and stream PDF from S3",
+    response_class=StreamingResponse,
+    dependencies=[Depends(JWTBearer())],
+)
+async def get_pdf_content(
+    doc_id: str,
+    db: Session = Depends(get_session),
+    dependencies=Depends(JWTBearer()),
+):
+    """
+    Streams a PDF from S3 through FastAPI, enforcing JWT auth and ownership instructs browsers to render it in-page.
+    """
+    token = dependencies
+    try:
+        payload = jwt.decode(token.credentials, JWT_SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = int(payload.get("sub"))
+    except jwt.PyJWTError:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid or expired token")
+
+    pdf_doc = db.query(models.PdfDocument).filter_by(id=doc_id, user_id=user_id).first()
+    if not pdf_doc:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "PDF not found or access denied")
+
+    try:
+        s3_resp = s3_client.get_object(Bucket=BUCKET_NAME, Key=pdf_doc.s3_key)
+    except ClientError as e:
+        code = e.response.get("Error", {}).get("Code")
+        if code == "NoSuchKey":
+            raise HTTPException(
+                status.HTTP_404_NOT_FOUND, "PDF file not found in storage"
+            )
+        raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, f"S3 error: {e}")
+
+    # 4. Stream back to client
+    return StreamingResponse(
+        content=s3_resp["Body"].iter_chunks(chunk_size=1024 * 16),
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'inline; filename="{pdf_doc.file_name}"'},
+    )
+
+
+@app.get("/pdf/{doc_id}/url")
+async def get_pdf_url(
+    doc_id: str, db: Session = Depends(get_session), dependencies=Depends(JWTBearer())
+):
+    token = dependencies
+    payload = jwt.decode(
+        token, JWT_SECRET_KEY, algorithms=[ALGORITHM]
+    )  
+    user_id = payload["sub"]
+    pdf_doc = (
+        db.query(models.PdfDocument).filter_by(id=doc_id, user_id=user_id).first()
+    )  
+    if not pdf_doc:
+        raise HTTPException(
+            status_code=404, detail="PDF not found or access denied"
+        )  
+    try:
+        url = s3_client.generate_presigned_url(
+            "get_object",
+            Params={"Bucket": BUCKET_NAME, "Key": pdf_doc.s3_key},
+            ExpiresIn=3600,  
+        )
+        return {"url": url}
+    except ClientError as e:
+        logger.error(f"Error generating presigned URL for {pdf_doc.s3_key}: {e}")
+        raise HTTPException(
+            status_code=500, detail="Could not generate PDF access URL."
+        )
