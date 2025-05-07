@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { AppShell, Container, Title, Text, Paper, Switch, Divider, Group, Button, ThemeIcon, Select } from '@mantine/core';
 import { motion } from 'framer-motion';
-import { Navigation } from '../components/Navigation';
+import { MainNav } from '../components/Navigation';
 import { 
   IconPalette, 
   IconBell, 
@@ -28,6 +28,18 @@ export function SettingsPage() {
     });
   };
 
+
+  const SelectWithoutChevron = ({ children, ...props }) => (
+    <Select
+      {...props}
+      rightSection={<></>}
+    >
+      {children}
+    </Select>
+  );
+  
+
+
   return (
     <div className="min-h-screen bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-purple-50 via-white to-violet-50">
       {/* Animated background shapes */}
@@ -46,10 +58,7 @@ export function SettingsPage() {
         }}
         className="bg-transparent"
       >
-        <AppShell.Navbar>
-          <Navigation />
-        </AppShell.Navbar>
-        
+      
         <AppShell.Main className="content-with-sidebar transition-all duration-300">
           <Container size="md" py="xl">
             <motion.div
@@ -104,7 +113,7 @@ export function SettingsPage() {
                       </Group>
                       <Group position="apart">
                         <Text>Language</Text>
-                        <Select
+                        <SelectWithoutChevron
                           value={language}
                           onChange={setLanguage}
                           data={[

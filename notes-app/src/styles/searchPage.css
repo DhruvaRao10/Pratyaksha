@@ -1,0 +1,189 @@
+/* searchPage.css */
+.search-page-layout {
+  display: flex;
+  min-height: 100vh;
+  background-color: #f8f9fa;
+}
+
+/* Left Sidebar Styles */
+.sidebar {
+  width: 250px;
+  background-color: white;
+  border-right: 1px solid #e9ecef;
+  padding: 1.5rem 1rem;
+  flex-shrink: 0;
+}
+
+.sidebar-content {
+  position: sticky;
+  top: 1.5rem;
+}
+
+.filter-section {
+  margin-bottom: 2rem;
+}
+
+.filter-heading {
+  color: #495057;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.filter-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.filter-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.filter-label {
+  color: #495057;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+/* Main Content Area Styles */
+.main-content {
+  flex-grow: 1;
+  padding: 1.5rem;
+}
+
+.search-container {
+  max-width: 1200px;
+  padding: 0;
+}
+
+.page-title {
+  font-size: 2rem;
+  color: #343a40;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.search-paper {
+  background-color: white;
+  border-radius: 8px;
+  margin-bottom: 2rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.search-input-container {
+  display: flex;
+  gap: 10px;
+}
+
+.search-input {
+  flex-grow: 1;
+}
+
+.search-button {
+  min-width: 100px;
+  background-color: #4dabf7;
+  color: white;
+  transition: all 0.3s ease;
+}
+
+.search-button:hover {
+  background-color: #339af0;
+}
+
+/* Results styling */
+.results-container {
+  position: relative;
+  min-height: 200px;
+}
+
+.no-results {
+  padding: 3rem 0;
+  font-size: 1.1rem;
+  color: #868e96;
+}
+
+.paper-card {
+  margin-bottom: 1.5rem;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+  border: 1px solid #e9ecef;
+}
+
+.paper-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+  background-color: #f8f9fa;
+}
+
+.paper-title {
+  font-size: 1.25rem;
+  line-height: 1.4;
+  font-weight: 600;
+  color: #343a40;
+}
+
+.pdf-link {
+  color: #339af0;
+  transition: color 0.2s;
+}
+
+.pdf-link:hover {
+  color: #1c7ed6;
+}
+
+.paper-details {
+  padding: 1rem;
+}
+
+.authors, .published-date {
+  margin-bottom: 0.75rem;
+  color: #495057;
+}
+
+.categories {
+  margin-bottom: 1rem;
+}
+
+.category-badge {
+  background-color: #e7f5ff;
+  color: #1c7ed6;
+  font-size: 0.75rem;
+}
+
+.summary {
+  color: #495057;
+  line-height: 1.6;
+}
+
+.pagination-container {
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .search-page-layout {
+    flex-direction: column;
+  }
+  
+  .sidebar {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid #e9ecef;
+    padding: 1rem;
+  }
+  
+  .filter-options {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+}

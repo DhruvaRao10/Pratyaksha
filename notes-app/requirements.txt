@@ -11,3 +11,4 @@ weaviate-client
 nougat-ocr
 elasticsearch
 arxiv
+httpx

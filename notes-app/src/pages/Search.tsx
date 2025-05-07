@@ -1,26 +1,25 @@
 //@ts-nocheck
-import React, { useState, useEffect } from 'react';
-import { 
-  AppShell, 
-  Title, 
-  Text, 
-  Container, 
-  TextInput, 
-  Button, 
-  Group, 
-  Card, 
-  Badge, 
-  Checkbox, 
-  Grid, 
-  LoadingOverlay, 
-  Pagination,
-  Select,
+import React, { useState, useEffect } from "react";
+import {
+  Title,
+  Text,
+  Container,
+  Group,
+  Card,
+  Grid,
   Paper,
-  Anchor, 
-} from '@mantine/core';
-import { Navigation } from '../components/Navigation';
-import { IconSearch, IconExternalLink } from '@tabler/icons-react';
-import { searchArxiv, searchElastic} from '../services/searchService';
+  Anchor,
+} from "@mantine/core";
+import { IconExternalLink, IconSearch } from "@tabler/icons-react";
+import { searchArxiv } from "../services/searchService";
+import { ToastContainer, toast } from "react-toastify";
+import { Button as ShadButton } from "../../src/ui/button";
+import { Input } from "../../src/ui/input";
+import "../styles/searchPage.css";
+import { Checkbox } from "../ui/checkbox";
+import { Label } from "../ui/label";
+
+
 
 interface Paper {
   id: string;
@@ -35,198 +34,284 @@ interface Paper {
 }
 
 export function SearchPage() {
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Paper[]>([]);
   const [loading, setLoading] = useState(false);
   const [activePage, setActivePage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [searchSource, setSearchSource] = useState<'arxiv' | 'elastic'>('arxiv');
   const [filters, setFilters] = useState({
     machineLearning: true,
     deepLearning: true,
-    artificialIntelligence: true
+    artificialIntelligence: true,
   });
 
   const getArXivCategories = () => {
-    const categories = [];
-    if (filters.machineLearning) categories.push('cs.LG', 'stat.ML');
-    if (filters.deepLearning) categories.push('cs.NE', 'cs.AI');
-    if (filters.artificialIntelligence) categories.push('cs.AI', 'cs.CL');
+    const categories: string[] = [];
+    if (filters.machineLearning) categories.push("cs.LG", "stat.ML");
+    if (filters.deepLearning) categories.push("cs.NE", "cs.AI");
+    if (filters.artificialIntelligence) categories.push("cs.AI", "cs.CL");
     return categories;
   };
 
   const handleSearch = async () => {
     if (!query.trim()) return;
-    
+  
+    console.log("Search started, loading: true");
     setLoading(true);
     try {
-      if (searchSource === 'arxiv') {
-        const categories = getArXivCategories();
-        const results = await searchArxiv(query, categories, activePage);
-        setSearchResults(results.papers);
-        setTotalPages(Math.ceil(results.total / 10));
-      } else {
-        const results = await searchElastic(query, activePage);
-        setSearchResults(results.papers);
-        setTotalPages(Math.ceil(results.total / 10));
-      }
+      const categories = getArXivCategories();
+      const results = await searchArxiv(query, categories, activePage);
+      setSearchResults(results.papers);
+      setTotalPages(Math.ceil(results.total / 10));
     } catch (error) {
-      console.error('Search failed:', error);
+      toast.error("Search failed to gather relevant research papers", {
+        autoClose: 5000,
+      });
     } finally {
+      console.log("Search completed, loading: false");
       setLoading(false);
     }
   };
-
+  
+  console.log("Rendering, loading:", loading);
   useEffect(() => {
     if (query.trim()) {
       handleSearch();
     }
   }, [activePage]);
 
-  const handlePageChange = (page: number) => {
-    setActivePage(page);
-  };
-
   const handleFilterChange = (name: keyof typeof filters) => {
     setFilters({
       ...filters,
-      [name]: !filters[name]
+      [name]: !filters[name],
     });
   };
 
-  const checkboxIconSize = '14px';
-
-
   return (
-    <AppShell
-      navbar={<Navigation />}
-      padding="md"
-    >
-      <Container size="xl">
-        <Title order={1} mb="lg">Academic Paper Search</Title>
-        
-        <Paper shadow="xs" p="md" mb="lg">
-          <Grid>
-            <Grid.Col span={12}>
-              <Group>
-                <TextInput
-                  placeholder="Search for papers..."
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  icon={<IconSearch size={16} />}
-                  style={{ flex: 1 }}
-                />
-                <Select
-                  data={[
-                    { value: 'arxiv', label: 'ArXiv' },
-                    { value: 'elastic', label: 'Indexed Papers' }
-                  ]}
-                  value={searchSource}
-                  onChange={(value) => setSearchSource(value as 'arxiv' | 'elastic')}
-                  style={{ width: 120 }}
-                />
-                <Button onClick={handleSearch}>Search</Button>
-              </Group>
-            </Grid.Col>
-
-            <Grid.Col span={12}>
-              <Group position="left" spacing="xs">
-                <Text size="sm" fw={500}>Filter by:</Text>
-                <Checkbox
-                  label="Machine Learning"
-                  checked={filters.machineLearning}
-                  onChange={() => handleFilterChange('machineLearning')}
-                  styles={{
-                    input: {
-                       height: checkboxIconSize,
-                       width: checkboxIconSize,
-                       minHeight: checkboxIconSize, 
-                       minWidth: checkboxIconSize   
-                    },
-                    icon: {
-                       height: `calc(${checkboxIconSize} * 0.6)`, 
-                       width: `calc(${checkboxIconSize} * 0.6)`,
-                       minWidth: `calc(${checkboxIconSize} * 0.6)`
-                    },
-                  }}
-                />
-                <Checkbox
-                  label="Deep Learning"
-                  checked={filters.deepLearning}
-                  onChange={() => handleFilterChange('deepLearning')}
-                  styles={{
-                    input: { height: checkboxIconSize, width: checkboxIconSize, minHeight: checkboxIconSize, minWidth: checkboxIconSize },
-                    icon: { height: `calc(${checkboxIconSize} * 0.6)`, width: `calc(${checkboxIconSize} * 0.6)`, minWidth: `calc(${checkboxIconSize} * 0.6)` },
-                  }}
-                />
-                <Checkbox
-                  label="Artificial Intelligence"
-                  checked={filters.artificialIntelligence}
-                  onChange={() => handleFilterChange('artificialIntelligence')}
-                  styles={{
-                     input: { height: checkboxIconSize, width: checkboxIconSize, minHeight: checkboxIconSize, minWidth: checkboxIconSize },
-                     icon: { height: `calc(${checkboxIconSize} * 0.6)`, width: `calc(${checkboxIconSize} * 0.6)`, minWidth: `calc(${checkboxIconSize} * 0.6)` },
-                  }}
-                />
-              </Group>
-            </Grid.Col>
-          </Grid>
-        </Paper>
-
-        <div style={{ position: 'relative', minHeight: 200 }}>
-          <LoadingOverlay visible={loading} overlayBlur={2} />
-          
-          {searchResults.length === 0 && !loading ? (
-            <Text align="center" color="dimmed" mt="xl">
-              {query.trim() ? 'No results found' : 'Enter a search query to find papers'}
+    <div className="search-page-layout">
+      <div className="sidebar">
+        <div className="sidebar-content">
+          <div className="filter-section">
+            <Text size="sm" fw={600} className="filter-heading">
+              Filter by:
             </Text>
-          ) : (
-            <>
-              {searchResults.map((paper) => (
-                <Card key={paper.id} mb="md" p="md" withBorder>
-                  <Card.Section withBorder p="md">
-                    <Group position="apart">
-                      <Title order={4}>{paper.title}</Title>
-                      <Anchor href={paper.pdf_url} target="_blank">
-                        <IconExternalLink size={20} />
-                      </Anchor>
-                    </Group>
-                  </Card.Section>
-                  
-                  <Text size="sm" mt="md" mb="xs">
-                    <b>Authors:</b> {paper.authors.join(', ')}
-                  </Text>
-                  
-                  <Text size="sm" mb="xs">
-                    <b>Published:</b> {new Date(paper.published).toLocaleDateString()}
-                    {paper.updated && ` (Updated: ${new Date(paper.updated).toLocaleDateString()})`}
-                  </Text>
-                  
-                  <Group spacing="xs" mb="md">
-                    {paper.categories.map((category) => (
-                      <Badge key={category}>{category}</Badge>
-                    ))}
-                  </Group>
-                  
-                  <Text size="sm" lineClamp={3}>
-                    {paper.summary}
-                  </Text>
-                </Card>
+            
+            <div className="filter-options">
+              {(
+                [
+                  "machineLearning",
+                  "deepLearning",
+                  "artificialIntelligence",
+                ] as const
+              ).map((key) => (
+                <div key={key} className="filter-option">
+                  <Checkbox
+                    id={key}
+                    checked={filters[key]}
+                    onCheckedChange={() => handleFilterChange(key)}
+                  />
+                  <Label htmlFor={key} className="filter-label">
+                    {key === "machineLearning"
+                      ? "Machine Learning"
+                      : key === "deepLearning"
+                      ? "Deep Learning"
+                      : "Artificial Intelligence"}
+                  </Label>
+                </div>
               ))}
-              
-              {totalPages > 1 && (
-                <Group position="center" mt="xl">
-                  {/* <Pagination
-                    total={totalPages}
-                    page={activePage}
-                    onChange={handlePageChange}
-                  /> */}
-                </Group>
-              )}
-            </>
-          )}
+            </div>
+          </div>
         </div>
-      </Container>
-    </AppShell>
+      </div>
+
+      <div className="main-content">
+        <Container size="xl" className="search-container">
+          <Title order={1} className="page-title">
+            Academic Paper Search
+          </Title>
+
+          <Paper shadow="xs" p="md" className="search-paper">
+            <Grid>
+              <Grid.Col span={12}>
+                <div className="search-input-container">
+                  <Input
+                    type="text"
+                    placeholder="Search arXiv papers..."
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    className="search-input"
+                  />
+                  <ShadButton
+                    onClick={handleSearch}
+                    variant="default"
+                    size="default"
+                    className="search-button"
+                  >
+                    Search
+                  </ShadButton>
+                </div>
+              </Grid.Col>
+            </Grid>
+          </Paper>
+
+          <div className="results-container">
+            {loading ? (
+              <div className="loading-container py-12">
+                <div className="loader-wrapper">
+                  <div className="paper-loader">
+                    <div className="loader-circle"></div>
+                    <div className="paper-sheets">
+                      <div className="paper-sheet sheet1"></div>
+                      <div className="paper-sheet sheet2"></div>
+                      <div className="paper-sheet sheet3"></div>
+                    </div>
+                  </div>
+                  <Text className="loading-text">Finding papers...</Text>
+                </div>
+              </div>
+            ) : searchResults.length === 0 ? (
+              <Text ta="center" c="dimmed" className="no-results">
+                {query.trim()
+                  ? "No results found"
+                  : "Enter a search query to find papers"}
+              </Text>
+            ) : (
+              <>
+                {searchResults.map((paper) => (
+                  <Card key={paper.id} className="paper-card">
+                    <Card.Section withBorder p="md" className="card-header">
+                      <Group justify="apart">
+                        <Title order={4} className="paper-title">
+                          {paper.title}
+                        </Title>
+                        <Anchor
+                          href={paper.pdf_url}
+                          target="_blank"
+                          className="pdf-link"
+                        >
+                          <IconExternalLink size={20} />
+                        </Anchor>
+                      </Group>
+                    </Card.Section>
+
+                    <div className="paper-details">
+                      <Text size="sm" className="authors">
+                        <b>Authors:</b> {paper.authors.join(", ")}
+                      </Text>
+
+                      <Text size="sm" className="published-date">
+                        <b>Published:</b>{" "}
+                        {new Date(paper.published).toLocaleDateString()}
+                        {paper.updated &&
+                          ` (Updated: ${new Date(
+                            paper.updated
+                          ).toLocaleDateString()})`}
+                      </Text>
+
+                      <Text size="sm" lineClamp={3} className="summary">
+                        {paper.summary}
+                      </Text>
+                    </div>
+                  </Card>
+                ))}
+
+                {totalPages > 1 && (
+                  <Group justify="center" className="pagination-container">
+                  </Group>
+                )}
+              </>
+            )}
+          </div>
+        </Container>
+      </div>
+
+      <style jsx>{`
+        .loading-container {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          min-height: 200px;
+          width: 100%;
+        }
+        
+        .loader-wrapper {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 20px;
+        }
+        
+        .loading-text {
+          color: #555;
+          font-size: 16px;
+        }
+        
+        .paper-loader {
+          position: relative;
+          width: 120px;
+          height: 120px;
+        }
+        
+        .loader-circle {
+          position: absolute;
+          width: 70px;
+          height: 70px;
+          border: 3px solid #e9ecef;
+          border-top: 3px solid #228be6;
+          border-radius: 50%;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          animation: spin 1.5s linear infinite;
+        }
+        
+        .paper-sheets {
+          position: absolute;
+          width: 60px;
+          height: 80px;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+        }
+        
+        .paper-sheet {
+          position: absolute;
+          width: 45px;
+          height: 60px;
+          background: white;
+          border: 1px solid #ccc;
+          border-radius: 3px;
+          box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .sheet1 {
+          transform: rotate(-5deg) translateX(-5px);
+          animation: pulse 2s ease-in-out infinite;
+          animation-delay: 0.2s;
+        }
+        
+        .sheet2 {
+          transform: rotate(3deg);
+          animation: pulse 2s ease-in-out infinite;
+          animation-delay: 0.4s;
+        }
+        
+        .sheet3 {
+          transform: rotate(7deg) translateX(5px);
+          animation: pulse 2s ease-in-out infinite;
+          animation-delay: 0.6s;
+        }
+        
+        @keyframes spin {
+          0% { transform: translate(-50%, -50%) rotate(0deg); }
+          100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+        
+        @keyframes pulse {
+          0%, 100% { opacity: 0.6; transform: translateY(0) rotate(var(--rotation, 0deg)); }
+          50% { opacity: 1; transform: translateY(-5px) rotate(var(--rotation, 0deg)); }
+        }
+      `}</style>
+    </div>
   );
-} 
+}

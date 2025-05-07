@@ -3,9 +3,19 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Container, TextInput, PasswordInput, Button, Title, Text, Paper, Divider, Group } from "@mantine/core";
+import { useTheme } from "next-themes";
+import { Button } from "../ui/button";
+import { Input } from "../ui/input";
+import { Label } from "../ui/label";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../ui/card";
+import { FaSun, FaMoon } from "react-icons/fa";
+import GoogleIcon from '@mui/icons-material/Google';
+
+import DarkModeIcon from '@mui/icons-material/DarkMode';
+import LightModeIcon from '@mui/icons-material/LightMode';
+
+
 import { notifications } from "@mantine/notifications";
-import { IconAt, IconLock, IconBrandGoogle } from "@tabler/icons-react";
 import axiosClient from "../services/axiosInstance";
 import { getAuth, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
 import { initializeApp } from "firebase/app";
@@ -27,6 +37,7 @@ const googleProvider = new GoogleAuthProvider();
 
 export default function SignIn() {
   const navigate = useNavigate();
+  const { theme, setTheme } = useTheme();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -72,7 +83,7 @@ export default function SignIn() {
         color: "green"
       });
       
-      navigate("/");
+      navigate("/home");
     } catch (error) {
       notifications.show({
         title: "Error",
@@ -115,82 +126,101 @@ export default function SignIn() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      {/* Animated background shapes */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="floating-shape bg-purple-500/5 w-96 h-96 rounded-full absolute -top-48 -right-48 blur-3xl"></div>
-        <div className="floating-shape-delayed bg-blue-500/5 w-96 h-96 rounded-full absolute -bottom-48 -left-48 blur-3xl"></div>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+      <div className="fixed inset-0 overflow-hidden -z-10 pointer-events-none">
+        <div className="floating-shape w-[600px] h-[600px] rounded-full absolute -top-[300px] -right-[300px] blur-3xl bg-purple-500/5 dark:bg-violet-900/10"></div>
+        <div className="floating-shape-delayed w-[500px] h-[500px] rounded-full absolute -bottom-[250px] -left-[250px] blur-3xl bg-blue-500/5 dark:bg-indigo-900/10"></div>
       </div>
       
-      <Container size={420} py={40}>
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <Title order={1} align="center" className="bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent mb-2">
-            Welcome Back
-          </Title>
-          <Text c="dimmed" size="sm" align="center" mb={30}>
-            Sign in to your Intuit Notes account
-          </Text>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="absolute top-4 right-4"
+        onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+      >
+        {theme === "dark" ? < FaMoon/> : <FaSun/>} 
+      </Button>
 
-          <Paper withBorder shadow="md" p={30} radius="md" className="bg-white/80 backdrop-blur-lg">
-            <TextInput
-              label="Email"
-              placeholder="you@example.com"
-              icon={<IconAt size={16} />}
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              error={emailError}
-              required
-              mb="md"
-            />
-            
-            <PasswordInput
-              label="Password"
-              placeholder="Your password"
-              icon={<IconLock size={16} />}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              error={passwordError}
-              required
-              mb="md"
-            />
-
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="w-full max-w-md px-4"
+      >
+        <Card className="backdrop-blur-lg bg-white/80 dark:bg-gray-900/80 border-gray-200 dark:border-gray-800">
+          <CardHeader className="space-y-1">
+            <CardTitle className="text-2xl font-bold text-center bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">
+              Welcome to Pratyaksha
+            </CardTitle>
+            <CardDescription className="text-center">
+              Sign in to your account
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className={emailError ? "border-red-500" : ""}
+              />
+              {emailError && <p className="text-sm text-red-500">{emailError}</p>}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="Your password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className={passwordError ? "border-red-500" : ""}
+              />
+              {passwordError && <p className="text-sm text-red-500">{passwordError}</p>}
+            </div>
             <Button
-              fullWidth
-              loading={loading}
+              className="w-full bg-gradient-to-r from-violet-600 to-purple-600 hover:opacity-90"
               onClick={handleLogin}
-              className="bg-gradient-to-r from-violet-600 to-purple-600"
-              mt="xl"
+              disabled={loading}
             >
-              Sign in
+              Sign In
             </Button>
-
-            <Divider label="or continue with" labelPosition="center" my="lg" />
-
-            <Group grow>
-              <Button
-                leftSection={<IconBrandGoogle size={18} />}
-                variant="default"
-                className="hover:bg-gray-100"
-                onClick={handleGoogleSignIn}
-                loading={loading}
-              >
-                Google
-              </Button>
-            </Group>
-
-            <Text align="center" mt="md">
+          </CardContent>
+          <CardFooter className="flex flex-col space-y-4">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">
+                  Or continue with
+                </span>
+              </div>
+            </div>
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={handleGoogleSignIn}
+              disabled={loading}
+            >
+              <GoogleIcon/>
+              Google
+            </Button>
+            <p className="text-center text-sm text-muted-foreground">
               Don't have an account?{" "}
-              <Text component={Link} to="/register" className="text-violet-600 hover:text-violet-700">
+              <Link
+                to="/register"
+                className="text-violet-600 hover:text-violet-700 dark:text-violet-400 dark:hover:text-violet-300"
+              >
                 Register
-              </Text>
-            </Text>
-          </Paper>
-        </motion.div>
-      </Container>
+              </Link>
+            </p>
+          </CardFooter>
+        </Card>
+      </motion.div>
     </div>
   );
 }

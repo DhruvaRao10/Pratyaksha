@@ -98,3 +98,18 @@ class ElasticSearchRequest(BaseModel):
     query: str
     page: int = 1
     size: int = 10
+
+
+class PrerequisitePapersRequest(BaseModel):
+    title: Optional[str] = None
+    doi: Optional[str] = None
+
+
+class PrerequisitePaper(BaseModel):
+    title: str
+    authors: List[str]
+    publication_year: int
+    url: str
+
+
+

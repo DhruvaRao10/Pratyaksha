@@ -1,37 +1,43 @@
 //@ts-nocheck
-import { useState, useEffect } from 'react';
-import { AppShell, Container, Title, Text, Paper, Group, ThemeIcon, Card, Badge, Accordion, Loader, Center } from '@mantine/core';
-import { motion } from 'framer-motion';
-import { Navigation } from '../components/Navigation';
-import { IconHistory, IconFile, IconFileText, IconAnalyze } from '@tabler/icons-react';
-import { notifications } from '@mantine/notifications';
+import { useState, useEffect } from "react";
+import {
+  Text,
+  Loader,
+  Center,
+} from "@mantine/core";
+import { motion } from "framer-motion";
+import {
+  IconHistory,
+  IconFileText,
+  IconAlertCircle,
+  IconChevronRight,} from "@tabler/icons-react";
 import { jwtDecode } from "jwt-decode";
-import { fetchUserAnalysisHistory } from '../services/analysisService';
+import { fetchUserAnalysisHistory } from "../services/analysisService";
+import { ToastContainer, toast } from "react-toastify";
+import "../styles/analysisHistory.css";
+import { Button } from "../ui/button";
+import { Card, CardContent, CardFooter, CardHeader } from "../ui/card";
+import { Badge } from "../ui/badge";
+import FloatingShapes from "../components/FloatingShapes";
 
 export function AnalysisHistoryPage() {
   const [analysisHistory, setAnalysisHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState(null);
+  const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
 
-  // Get user ID from token on component mount
   useEffect(() => {
-    const token = localStorage.getItem('access_token');
+    const token = localStorage.getItem("access_token");
     if (token) {
       try {
         const decoded = jwtDecode(token);
         setUserId(decoded.sub);
       } catch (error) {
-        console.error('Error decoding token:', error);
-        notifications.show({
-          title: 'Error',
-          message: 'Failed to get user information. Please try logging in again.',
-          color: 'red',
-        });
+        console.error("Error decoding token:", error);
       }
     }
   }, []);
 
-  // Fetch analysis history when userId is available
   useEffect(() => {
     if (userId) {
       fetchHistory();
@@ -44,114 +50,171 @@ export function AnalysisHistoryPage() {
       const historyData = await fetchUserAnalysisHistory(userId);
       setAnalysisHistory(historyData);
     } catch (error) {
-      notifications.show({
-        title: 'Error',
-        message: 'Failed to fetch analysis history. Please try again later.',
-        color: 'red',
+      toast("Upload PDFs to fetch analysis history", {
+        position: "bottom-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: false,
+        progress: undefined,
+        theme: "dark",
       });
     } finally {
       setLoading(false);
     }
   };
 
-  return (
-    <div className="min-h-screen bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-purple-50 via-white to-violet-50">
-      {/* Animated background shapes */}
-      <div className="fixed inset-0 overflow-hidden -z-10">
-        <div className="floating-shape bg-purple-500/5 w-[800px] h-[800px] rounded-full absolute -top-[400px] -right-[400px] blur-3xl"></div>
-        <div className="floating-shape-delayed bg-blue-500/5 w-[600px] h-[600px] rounded-full absolute top-1/3 left-1/4 blur-3xl"></div>
-        <div className="floating-shape bg-pink-500/5 w-[700px] h-[700px] rounded-full absolute -bottom-[300px] -left-[300px] blur-3xl"></div>
-      </div>
-    
-      <AppShell
-        padding="md"
-        navbar={{
-          width: 260,
-          breakpoint: 'sm',
-          collapsed: { mobile: false, desktop: false }
-        }}
-        className="bg-transparent"
-      >
-        <AppShell.Navbar>
-          <Navigation />
-        </AppShell.Navbar>
-        
-        <AppShell.Main className="content-with-sidebar transition-all duration-300">
-          <Container size="xl" py="xl">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="space-y-12"
-            >
-              <div className="flex justify-between items-center">
-                <div>
-                  <Title
-                    order={1}
-                    className="text-4xl font-bold bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent"
-                  >
-                    Analysis History
-                  </Title>
-                  <Text c="dimmed" mt="md" size="lg">
-                    Your previous document analyses and insights
-                  </Text>
-                </div>
-              </div>
+  const toggleExpand = (docId: string) => {
+    setExpandedItems(prev => ({
+      ...prev,
+      [docId]: !prev[docId]
+    }));
+  };
 
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-              >
-                <Paper
-                  radius="lg"
-                  className="bg-white/90 backdrop-blur-xl border border-gray-100 shadow-xl p-8"
-                >
-                  {loading ? (
-                    <Center py="xl">
-                      <Loader color="violet" size="lg" />
-                    </Center>
-                  ) : analysisHistory.length === 0 ? (
-                    <Card shadow="sm" p="xl" radius="md" withBorder>
-                      <Text fw={500} align="center" size="lg" py="md">
-                        No analysis history found. Try uploading a document first!
-                      </Text>
-                    </Card>
-                  ) : (
-                    <Accordion variant="separated">
-                      {analysisHistory.map((item, index) => (
-                        <Accordion.Item key={index} value={item.doc_id}>
-                          <Accordion.Control icon={
-                            <ThemeIcon variant="light" size="lg" color="violet" radius="md">
-                              <IconFileText size={20} />
-                            </ThemeIcon>
-                          }>
-                            <Group>
-                              <div>
-                                <Text fw={500}>{item.file_name}</Text>
-                                <Text size="sm" color="dimmed">
-                                  {new Date(item.timestamp).toLocaleDateString()}
-                                </Text>
-                              </div>
-                              <Badge color="violet" variant="light">Document</Badge>
-                            </Group>
-                          </Accordion.Control>
-                          <Accordion.Panel>
-                            <Paper withBorder p="md" radius="md" bg="gray.0">
-                              <Text component="pre" style={{ whiteSpace: 'pre-wrap' }}>
-                                {item.analysis}
-                              </Text>
-                            </Paper>
-                          </Accordion.Panel>
-                        </Accordion.Item>
-                      ))}
-                    </Accordion>
-                  )}
-                </Paper>
-              </motion.div>
-            </motion.div>
-          </Container>
-        </AppShell.Main>
-      </AppShell>
+  const formatAnalysis = (analysis: string) => {
+    if (!analysis) return '';
+    
+    // Split the analysis into sections
+    const sections = analysis.split('\n\n');
+    
+    return sections.map((section, index) => {
+      if (section.startsWith('SUMMARY:') || section.startsWith('KEY CONCEPTS:')) {
+        return (
+          <div key={index} className="mb-4">
+            <h4 className="text-lg font-semibold text-white mb-2">{section.split(':')[0]}</h4>
+            <p className="text-white/90">{section.split(':')[1]?.trim()}</p>
+          </div>
+        );
+      }
+      
+      if (/^\d+\./.test(section)) {
+        const [number, ...content] = section.split('.');
+        return (
+          <div key={index} className="mb-3">
+            <p className="text-white/90">
+              <span className="font-semibold">{number}.</span>
+              {content.join('.').trim()}
+            </p>
+          </div>
+        );
+      }
+      
+      return (
+        <p key={index} className="text-white/90 mb-3">
+          {section.trim()}
+        </p>
+      );
+    });
+  };
+
+  return (
+    <div className="main-gradient-bg min-h-screen overflow-y-auto">
+      <FloatingShapes />
+      <div className="content-overlay container px-4 max-w-7xl mx-auto overflow-y-auto py-16">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="space-y-12"
+        >
+          <div className="flex justify-between items-center mb-12">
+            <div> 
+              <h1 className="text-4xl font-bold mb-2 text-white glow-text">
+                Analysis History
+              </h1>
+              <p className="text-xl text-white/80">
+                Your previous document analysis and insights
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              onClick={fetchHistory}
+              className="border-white/20 text-white hover:bg-white/10"
+            >
+              <IconHistory size={16} className="mr-2" />
+              Refresh
+            </Button>
+          </div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="premium-glass rounded-xl overflow-hidden p-6"
+          >
+            {loading ? (
+              <Center py="xl" className="loading-container">
+                <Loader color="blue" size="lg" />
+              </Center>
+            ) : analysisHistory.length === 0 ? (
+              <div className="text-center py-12">
+                <IconAlertCircle size={48} className="text-white/50 mx-auto mb-4" />
+                <Text className="text-white font-semibold text-xl mb-2">
+                  No analysis history found
+                </Text>
+                <Text className="text-white/70">
+                  Upload and analyze documents to see your history here
+                </Text>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-6">
+                {analysisHistory.map((item, index) => (
+                  <Card 
+                    key={index} 
+                    className="bg-white/10 backdrop-blur-sm border border-white/20 shadow-lg hover:shadow-xl transition-all duration-300"
+                  >
+                    <CardHeader className="p-5 flex flex-row items-center space-y-0 gap-4">
+                      <div className="bg-primary/20 p-3 rounded-lg">
+                        <IconFileText size={24} className="text-primary" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="text-lg font-medium text-white mb-1">
+                          {item.file_name}
+                        </h3>
+                        <p className="text-sm text-white/60">
+                          {new Date(item.timestamp).toLocaleDateString(
+                            "en-US",
+                            {
+                              year: "numeric",
+                              month: "short",
+                              day: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            }
+                          )}
+                        </p>
+                      </div>
+                      <Badge variant="secondary" className="bg-primary/20 text-white mr-2">
+                        Document
+                      </Badge>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="text-white hover:bg-white/10" 
+                        onClick={() => toggleExpand(item.doc_id)}
+                      >
+                        <IconChevronRight 
+                          size={20} 
+                          className={`transition-transform duration-300 ${expandedItems[item.doc_id] ? 'rotate-90' : ''}`} 
+                        />
+                      </Button>
+                    </CardHeader>
+                    
+                    {expandedItems[item.doc_id] && (
+                      <CardContent className="px-5 pt-0 pb-5">
+                        <div className="bg-white/5 p-6 mt-2 rounded-lg backdrop-blur-sm border border-white/10 shadow-inner">
+                          {formatAnalysis(item.analysis)}
+                        </div>
+                      </CardContent>
+                    )}
+                  </Card>
+                ))}
+              </div>
+            )}
+          </motion.div>
+        </motion.div>
+      </div>
+      <ToastContainer />
     </div>
   );
-} 
+}

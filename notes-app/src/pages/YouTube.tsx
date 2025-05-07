@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { AppShell, Container, Title, Text, TextInput, Button, Paper, ThemeIcon } from '@mantine/core';
 import { motion } from 'framer-motion';
-import { Navigation } from '../components/Navigation';
+import { MainNav } from '../components/Navigation';
 import { IconBrandYoutube, IconCheck, IconX } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import axiosClient from "../services/axiosInstance";
@@ -107,7 +107,7 @@ export function YouTubePage() {
         className="bg-transparent"
       >
         <AppShell.Navbar>
-          <Navigation />
+          {/* <MainNav /> */}
         </AppShell.Navbar>
         
         <AppShell.Main className="content-with-sidebar transition-all duration-300">

@@ -1,7 +1,17 @@
 version: '3.8'
 
 services:
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    restart: unless-stopped
+
   weaviate_anon:
+    image: cr.weaviate.io/semitechnologies/weaviate:1.27.2
     command:
       - --host
       - 0.0.0.0
@@ -9,26 +19,26 @@ services:
       - '5000'
       - --scheme
       - http
-    image: cr.weaviate.io/semitechnologies/weaviate:1.27.2
     ports:
-      - 5000:5000
-      - 50051:50051
+      - "5000:5000"
+      - "50051:50051"
     restart: on-failure:0
     environment:
       LLAMA_APIKEY: ${LLAMA_APIKEY}
-      # COHERE_APIKEY: 
-      # HUGGINGFACE_APIKEY: $HUGGINGFACE_APIKEY  # For Hugging Face models (if used)
+      # COHERE_APIKEY:
+      # HUGGINGFACE_APIKEY: ${HUGGINGFACE_APIKEY}
       QUERY_DEFAULTS_LIMIT: 25
       AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: 'true'
       AUTHENTICATION__OIDC__ENABLED: 'false'
-      # AUTHENTICATION_APIKEY_ENABLED: 'true'   
-      # AUTHENTICATION_APIKEY_ALLOWED_KEYS: 'your-api-key'  
       PERSISTENCE_DATA_PATH: '/var/lib/weaviate'
       DEFAULT_VECTORIZER_MODULE: 'none'
       ENABLE_MODULES: 'text2vec-cohere,text2vec-huggingface,text2vec-openai,generative-openai,generative-cohere'
       BACKUP_FILESYSTEM_PATH: '/var/lib/weaviate/backups'
       CLUSTER_HOSTNAME: 'cluster-init'
-      
+    volumes:
+      - weaviate_data:/var/lib/weaviate
+      - weaviate_backups:/var/lib/weaviate/backups
+
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.11.4
     container_name: elasticsearch
@@ -37,20 +47,23 @@ services:
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
       - xpack.security.enabled=false
     ports:
-      - 9200:9200
-      - 9300:9300
+      - "9200:9200"
+      - "9300:9300"
     volumes:
-      - elasticsearch-data:/usr/share/elasticsearch/data
+      - elasticsearch_data:/usr/share/elasticsearch/data
 
   kibana:
     image: docker.elastic.co/kibana/kibana:8.11.4
     container_name: kibana
     ports:
-      - 5601:5601
+      - "5601:5601"
     environment:
-      - ELASTICSEARCH_HOSTS=http://localhost:9200
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
     depends_on:
       - elasticsearch
 
 volumes:
-  elasticsearch-data:
+  redis_data:
+  weaviate_data:
+  weaviate_backups:
+  elasticsearch_data:

@@ -1,4 +1,5 @@
 import os
+import models
 from os import getenv
 from dotenv import load_dotenv
 import io
@@ -32,12 +33,16 @@ from PyPDF2 import PdfReader
 from llama_index.readers.file import PyMuPDFReader
 import pymupdf
 import pymupdf4llm
+import pdfplumber
 import logging
 from pathlib import Path
 import tempfile
 import asyncio
 from datetime import datetime, timezone
 from botocore.exceptions import ClientError
+from exa_search import ExaSearch
+from database import Base, engine, sessionLocal
+import re
 
 
 load_dotenv()
@@ -72,7 +77,7 @@ class RAGPipeline:
         aws_region: Optional[str] = None,
         base_model: str = "google/flan-t5-small",
         lora_adapter_path: str = "./summarization-lora-finetuned/final_model",
-        openrouter_model: str = "meta-llama/llama-4-scout:free",
+        openrouter_model: str = "nvidia/llama-3.1-nemotron-ultra-253b-v1:free",
     ):
         """
         Initialize the RAG Pipeline with Weaviate, LlamaIndex, and MiniLM.
@@ -146,6 +151,8 @@ class RAGPipeline:
             logger.error(f"Error initializing index: {str(e)}")
             raise
 
+        self.exa_search = ExaSearch()
+
     def ensure_schema(self) -> None:
         """Create Weaviate schema if it doesn't exist"""
         try:
@@ -155,7 +162,7 @@ class RAGPipeline:
                 # Create collection with properties
                 collection = self.weaviate_client.collections.create(
                     name=self.class_name,
-                    vectorizer_config=weaviate.config.Configure.Vectorizer.none(),  
+                    vectorizer_config=weaviate.config.Configure.Vectorizer.none(),
                     properties=[
                         weaviate.properties.Property(
                             name="content",
@@ -243,40 +250,42 @@ class RAGPipeline:
             raise
 
     def _extract_text_from_pdf_bytes(self, pdf_bytes: bytes) -> str:
-        """Extract text content from PDF bytes using pymupdf4llm for Markdown conversion."""
-        doc = None  # Initialize doc to None for the finally block
+        """Extract text content from PDF bytes using pdfplumber."""
         try:
             logger.info(
-                f"Starting PDF text extraction using pymupdf4llm from {len(pdf_bytes)} bytes"
+                f"Starting PDF text extraction using pdfplumber from {len(pdf_bytes)} bytes"
             )
 
-            # --- FIX: Explicitly open the document from bytes using pymupdf ---
-            # Open the PDF directly from the bytes stream
-            doc = pymupdf.open(stream=pdf_bytes, filetype="pdf")
+            # Create a temporary file to store the PDF bytes
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_file:
+                temp_file.write(pdf_bytes)
+                temp_file_path = temp_file.name
 
-            # Pass the opened document object to pymupdf4llm
-            md_text = pymupdf4llm.to_markdown(doc)
-            # -----------------------------------------------------------------
+            # Extract text using pdfplumber
+            text = ""
+            with pdfplumber.open(temp_file_path) as pdf:
+                for page in pdf.pages:
+                    page_text = page.extract_text()
+                    if page_text:
+                        text += page_text + "\n\n"
 
-            if not md_text or len(md_text.strip()) < 10:
+            # Clean up the temporary file
+            os.unlink(temp_file_path)
+
+            if not text or len(text.strip()) < 10:
                 logger.warning(
-                    f"pymupdf4llm returned very short or empty text for the PDF."
+                    f"pdfplumber returned very short or empty text for the PDF."
                 )
 
             logger.info(
-                f"Successfully extracted markdown text with length {len(md_text)} characters"
+                f"Successfully extracted text with length {len(text)} characters"
             )
-            return md_text
+            return text
         except Exception as e:
             logger.error(
-                f"Error during pymupdf4llm text extraction: {str(e)}", exc_info=True
+                f"Error during pdfplumber text extraction: {str(e)}", exc_info=True
             )
-            raise  # Re-raise the exception
-        finally:
-            # --- Ensure the document is closed ---
-            if doc:
-                doc.close()
-                logger.debug("PyMuPDF document closed.")
+            raise
 
     def _ensure_weaviate_connected(self):
         """Ensure the Weaviate client is connected, reconnect if necessary"""
@@ -300,12 +309,81 @@ class RAGPipeline:
             logger.error(f"Error connecting to Weaviate: {str(e)}")
             raise
 
+    def _chunk_text_for_summary(
+        self, text: str, max_chunk_size: int = 12000
+    ) -> List[str]:
+        """
+        Split text into chunks that preserve semantic structure and mathematical equations.
+        Uses section headers and natural breaks in the text to create meaningful chunks.
+        """
+        if len(text) <= max_chunk_size:
+            return [text]
+
+        section_headers = [
+            r"\n\d+\.\s+[A-Z][^\n]+",
+            r"\n[A-Z][^\n]+\n[-=]+\n",
+            r"\n##\s+[^\n]+\n",
+            r"\n[A-Z][^\n]+\n",
+        ]
+
+        # Combine all patterns
+        pattern = "|".join(section_headers)
+        sections = re.split(pattern, text)
+
+        # Filter out empty sections and normalize
+        sections = [s.strip() for s in sections if s.strip()]
+
+        chunks = []
+        current_chunk = []
+        current_size = 0
+
+        for section in sections:
+            section_size = len(section)
+
+            if section_size > max_chunk_size:
+                subsection_patterns = [
+                    r"\n\d+\.\d+\s+[^\n]+",
+                    r"\n###\s+[^\n]+\n",
+                    r"\n[A-Z][^\n]+\n[-]+\n",
+                ]
+                subpattern = "|".join(subsection_patterns)
+                subsections = re.split(subpattern, section)
+                subsections = [s.strip() for s in subsections if s.strip()]
+
+                for subsection in subsections:
+                    if (
+                        current_size + len(subsection) > max_chunk_size
+                        and current_chunk
+                    ):
+                        chunks.append("\n\n".join(current_chunk))
+                        current_chunk = [subsection]
+                        current_size = len(subsection)
+                    else:
+                        current_chunk.append(subsection)
+                        current_size += len(subsection)
+            else:
+                if current_size + section_size > max_chunk_size and current_chunk:
+                    chunks.append("\n\n".join(current_chunk))
+                    current_chunk = [section]
+                    current_size = section_size
+                else:
+                    current_chunk.append(section)
+                    current_size += section_size
+
+        if current_chunk:
+            chunks.append("\n\n".join(current_chunk))
+
+        logger.info(f"Split text into {len(chunks)} chunks")
+        for i, chunk in enumerate(chunks):
+            logger.info(f"Chunk {i+1} size: {len(chunk)} characters")
+
+        return chunks
+
     async def summarize_document(self, doc_id: str) -> Dict[str, Any]:
         """
         Generate a summary and extract key concepts from a document.
         """
         try:
-
             doc_id = str(doc_id)
             self._ensure_weaviate_connected()
 
@@ -330,97 +408,158 @@ class RAGPipeline:
                 return {"error": "Document not found"}
 
             full_text = " ".join([obj.properties["content"] for obj in results])
+            logger.info(f"Full text length: {len(full_text)} characters")
 
-            max_text_length = 4000
+            text_chunks = self._chunk_text_for_summary(full_text)
+            logger.info(f"Split text into {len(text_chunks)} chunks")
 
-            summary_prompt = f"""
-            You are an expert document analyzer. Please analyze the following document and:
-            1. Provide a concise summary (3-5 sentences)
-            2. Extract the 5-7 most important concepts or topics
-            3. Explain each key concept in simple terms
-            4. Retain important terminology and technical language from the original and explain the technical language in detail as well 
-            5. If you detect any Math in the pdf break that down intuitively 
+            all_summaries = []
+            for i, chunk in enumerate(text_chunks):
+                logger.info(f"Processing chunk {i+1}/{len(text_chunks)}")
 
-            DOCUMENT:
-            {full_text[:max_text_length]}
-            
-            FORMAT YOUR RESPONSE AS:
-            
-            SUMMARY:
-            [Your summary here]
-            
-            KEY CONCEPTS:
-            1. [Concept 1]: [Detailed explanation]
-            2. [Concept 2]: [Detailed explanation]
-            ...
-            """
-            # llama index assistant creation
-            message = ChatMessage(role="user", content=summary_prompt)
+                summary_prompt = f"""
+                    SYSTEM:
+                    You are a world‑class AI tutor and research explainer, especially skilled at unraveling complex math in ML/NLP/AI papers.  Whenever a formula or special function (e.g., sin, cos, exp, softmax) appears, you MUST:
+                    1. Explain the *purpose* of that function in this context (“why sine/cosine for positional encoding?”).  
+                    2. Give an intuitive analogy or real‑world metaphor (“treat each dimension like a clock hand…”).  
+                    3. Break down each symbol and term with a toy example.  
+                    4. Contrast with an alternative (e.g., “they didn’t use linear or random encoding because…”).  
 
-            max_retries = 3
-            retry_count = 0
-            last_error = None
+                    Your overall response should follow this structure (using markdown):
 
-            while retry_count < max_retries:
-                try:
-                    logger.info(
-                        f"Attempt {retry_count + 1} to generate summary with OpenRouter"
-                    )
-                    # streaming chat response
-                    response = self.llm.stream_chat([message])
-                    full_response = ""
+                    # Section Summary  
+                    _A concise 2–3 sentence overview of what this section is doing._
 
-                    for r in response:
-                        print(r.delta, end="")
-                        full_response += r.delta
+                    # Key Concepts  
+                    - Concept A  
+                    - Concept B  
+                    - Concept C  
 
-                    logger.info("Successfully generated summary")
-                    return {
-                        "doc_id": doc_id,
-                        "analysis": full_response,
-                        "timestamp": datetime.now(tz=timezone.utc).isoformat(),
-                    }
-                except Exception as e:
-                    retry_count += 1
-                    last_error = e
-                    logger.warning(f"Attempt {retry_count} failed: {str(e)}")
+                    # Detailed Explanations  
+                    ### Concept A  
+                    - **Intuition & Analogy:**  
+                    - [Describe as a story or real‑world metaphor]  
+                    - **Technical Details:**  
+                    - [Formal definition, equations]  
+                    - **Math Breakdown:**  
+                    1. **Equation (…), step by step:**  
+                        - *Term 1* (symbol → meaning)  
+                        - *Term 2* (why chosen, e.g., “cosine gives smooth periodic variation”)  
+                        - *Why this function:* [deep why + alternative comparison]  
+                    2. **Concrete Example:**  
+                        - Numeric instantiation or simple code snippet  
 
-                    if retry_count < max_retries:
-                        wait_time = 2**retry_count
-                        logger.info(f"Waiting {wait_time} seconds before retry...")
-                        await asyncio.sleep(wait_time)
+                    > **Always** include a short “Why this function?” mini‑section under every formula that tackles exactly why it was chosen and what would happen if you replaced it.
 
-                    if retry_count == max_retries - 1 and isinstance(
-                        self.llm, OpenRouter
-                    ):
-                        logger.info("Switching to fallback LLM (Ollama)")
-                        try:
-                            # Switch to Ollama as fallback
-                            backup_llm = Ollama(model="llama2", temperature=0.1)
-                            response = backup_llm.complete(summary_prompt)
-                            logger.info(
-                                "Successfully generated summary with fallback LLM"
-                            )
-                            return {
-                                "doc_id": doc_id,
-                                "analysis": str(response),
-                                "timestamp": datetime.now(tz=timezone.utc).isoformat(),
-                            }
-                        except Exception as fallback_error:
-                            logger.error(
-                                f"Fallback LLM also failed: {str(fallback_error)}"
-                            )
+                    # Examples & Applications  
+                    _Practical scenarios, code sketches, or visual analogies that show how these math pieces work in practice._
 
-            logger.error(f"All {max_retries} attempts to generate summary failed")
+                    ---
+
+                    USER:
+                    Here is the text chunk to analyze:
+
+                    {chunk}
+                """
+
+                message = ChatMessage(role="user", content=summary_prompt)
+                chunk_summary = await self._generate_summary_with_retry(message)
+
+                formatted_summary = self._format_summary(chunk_summary)
+                all_summaries.append(formatted_summary)
+
+            combined_summary = "\n\n---\n\n".join(all_summaries)
+            logger.info(
+                f"Generated combined summary of length: {len(combined_summary)}"
+            )
+
             return {
                 "doc_id": doc_id,
-                "error": f"Failed to generate summary after {max_retries} attempts: {str(last_error)}",
+                "analysis": combined_summary,
                 "timestamp": datetime.now(tz=timezone.utc).isoformat(),
             }
 
         except Exception as e:
             logger.error(f"Error summarizing document {doc_id}: {str(e)}")
             raise
+
+    def _format_summary(self, summary: str) -> str:
+        """
+        Clean and format the summary text for better readability.
+        """
+        summary = re.sub(r"\n{3,}", "\n\n", summary.strip())
+
+        summary = re.sub(r"(#{1,6}\s+[^\n]+)\n", r"\1\n\n", summary)
+
+        summary = re.sub(r"(\n\s*[-*]\s+[^\n]+)\n", r"\1\n\n", summary)
+
+        summary = re.sub(r"```\n", "```\n\n", summary)
+        summary = re.sub(r"\n```", "\n\n```", summary)
+
+        # Add horizontal rule between major sections if not present
+        if not re.search(r"\n---\n", summary):
+            summary = re.sub(r"\n(##\s+[^\n]+)\n", r"\n---\n\n\1\n", summary)
+
+        return summary
+
+    async def _generate_summary_with_retry(self, message: ChatMessage) -> str:
+        """Helper method to generate summary with retries."""
+        max_retries = 3
+        retry_count = 0
+        last_error = None
+
+        while retry_count < max_retries:
+            try:
+                logger.info(
+                    f"Attempt {retry_count + 1} to generate summary with OpenRouter"
+                )
+                response = self.llm.stream_chat([message])
+                full_response = ""
+                chunk_count = 0
+
+                for r in response:
+                    if r.delta:
+                        print(r.delta, end="", flush=True)
+                        full_response += r.delta
+                        chunk_count += 1
+
+                        if chunk_count % 10 == 0:
+                            logger.info(
+                                f"Received {chunk_count} chunks, current response length: {len(full_response)}"
+                            )
+
+                logger.info(
+                    f"Successfully generated summary with {chunk_count} chunks, total length: {len(full_response)}"
+                )
+
+                if len(full_response) < 100:
+                    raise Exception("Response too short, likely incomplete")
+
+                return full_response
+
+            except Exception as e:
+                retry_count += 1
+                last_error = e
+                logger.warning(f"Attempt {retry_count} failed: {str(e)}")
+
+                if retry_count < max_retries:
+                    wait_time = 2**retry_count
+                    logger.info(f"Waiting {wait_time} seconds before retry...")
+                    await asyncio.sleep(wait_time)
+
+                if retry_count == max_retries - 1 and isinstance(self.llm, OpenRouter):
+                    logger.info("Switching to fallback LLM (Ollama)")
+                    try:
+                        backup_llm = Ollama(model="llama2", temperature=0.1)
+                        response = backup_llm.complete(message.content)
+                        logger.info("Successfully generated summary with fallback LLM")
+                        return str(response)
+                    except Exception as fallback_error:
+                        logger.error(f"Fallback LLM also failed: {str(fallback_error)}")
+
+        raise Exception(
+            f"Failed to generate summary after {max_retries} attempts: {str(last_error)}"
+        )
 
     async def query(
         self, query_text: str, doc_id: Optional[str] = None, top_k: int = 5
@@ -653,7 +792,42 @@ class RAGPipeline:
             # Try to summarize if we have chunks
             if len(results) > 0:
                 summary_result = await self.summarize_document(doc_id)
-                logger.info(f"Generated document summary and analysis")
+
+                # Search for related papers using Exa API
+                try:
+                    # Use the first chunk as context for related papers search
+                    first_chunk = results[0].properties["content"]
+                    related_papers = self.exa_search.search_related_papers(
+                        content=first_chunk,
+                        filters=["machine learning", "deep learning", "NLP", "AI"],
+                    )
+
+                    # Store related papers in the database
+                    db = sessionLocal()
+                    try:
+                        for paper in related_papers:
+                            related_paper = models.RelatedPaper(
+                                doc_id=doc_id,
+                                title=paper["title"],
+                                url=paper["url"],
+                                authors=paper["authors"],
+                                publication_year=paper["publication_year"],
+                                abstract=paper["abstract"],
+                                categories=paper["categories"],
+                                relevance_score=paper["relevance_score"],
+                            )
+                            db.add(related_paper)
+                        db.commit()
+                    finally:
+                        db.close()
+
+                    # Add related papers to the summary result
+                    summary_result["related_papers"] = related_papers
+                except Exception as e:
+                    logger.error(f"Error finding related papers: {str(e)}")
+                    summary_result["related_papers"] = []
+
+                logger.info(f"Generated document summary, analysis, and related papers")
                 return summary_result
             else:
                 return {"error": "Failed to insert document"}
@@ -677,10 +851,10 @@ class RAGPipeline:
 
             self.llm = OpenRouter(
                 api_key=api_key,
-                max_tokens=1000,
-                context_window=4096,
+                max_tokens=4000,  # Increased for longer responses
+                context_window=8192,  # Increased context window
                 model=self.openrouter_model,
-                timeout=60,
+                timeout=120,  # Increased timeout for longer responses
             )
             logger.info(
                 f"Successfully initialized OpenRouter with model: {self.openrouter_model}"
