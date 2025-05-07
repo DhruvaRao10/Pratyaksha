@@ -8,6 +8,11 @@ import json
 import boto3
 from llama_index.llms.openrouter import OpenRouter
 from llama_index.core.llms import ChatMessage
+import pytesseract
+from PIL import Image
+import fitz  # PyMuPDF
+import numpy as np
+import cv2
 
 from weaviate.classes.query import Filter
 
@@ -119,7 +124,7 @@ class RAGPipeline:
             metadata_key="metadata",
         )
 
-        # Create service context
+        #  service context
         Settings.llm = self.llm
         Settings.embed_model = self.embed_model
         Settings.node_parser = SimpleNodeParser.from_defaults(
@@ -250,41 +255,81 @@ class RAGPipeline:
             raise
 
     def _extract_text_from_pdf_bytes(self, pdf_bytes: bytes) -> str:
-        """Extract text content from PDF bytes using pdfplumber."""
+        """Extract text content from PDF bytes using pdfplumber and OCR for images."""
         try:
-            logger.info(
-                f"Starting PDF text extraction using pdfplumber from {len(pdf_bytes)} bytes"
-            )
+            logger.info(f"Starting PDF text extraction from {len(pdf_bytes)} bytes")
 
-            # Create a temporary file to store the PDF bytes
             with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_file:
                 temp_file.write(pdf_bytes)
                 temp_file_path = temp_file.name
 
-            # Extract text using pdfplumber
-            text = ""
+            # Initialize text content
+            text_content = []
+
             with pdfplumber.open(temp_file_path) as pdf:
-                for page in pdf.pages:
+                for page_num, page in enumerate(pdf.pages):
                     page_text = page.extract_text()
                     if page_text:
-                        text += page_text + "\n\n"
+                        text_content.append(f"Page {page_num + 1}:\n{page_text}\n\n")
 
-            # Clean up the temporary file
+            #  Extract and OCR images using PyMuPDF
+            pdf_document = fitz.open(temp_file_path)
+            for page_num in range(len(pdf_document)):
+                page = pdf_document[page_num]
+
+                image_list = page.get_images(full=True)
+
+                for img_index, img in enumerate(image_list):
+                    try:
+                        xref = img[0]
+                        base_image = pdf_document.extract_image(xref)
+                        image_bytes = base_image["image"]
+
+                        image = Image.open(io.BytesIO(image_bytes))
+
+                        cv_image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
+
+                        gray = cv2.cvtColor(cv_image, cv2.COLOR_BGR2GRAY)
+
+                        gray = cv2.threshold(
+                            gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU
+                        )[1]
+
+                        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
+                        gray = cv2.dilate(gray, kernel, iterations=1)
+
+                        pil_image = Image.fromarray(gray)
+
+                        ocr_text = pytesseract.image_to_string(
+                            pil_image, config="--psm 6 --oem 3"
+                        )
+
+                        if ocr_text.strip():
+                            text_content.append(
+                                f"Page {page_num + 1} - Image {img_index + 1} (OCR):\n{ocr_text}\n\n"
+                            )
+
+                    except Exception as img_error:
+                        logger.warning(
+                            f"Error processing image {img_index} on page {page_num + 1}: {str(img_error)}"
+                        )
+                        continue
+
+            pdf_document.close()
             os.unlink(temp_file_path)
 
-            if not text or len(text.strip()) < 10:
-                logger.warning(
-                    f"pdfplumber returned very short or empty text for the PDF."
-                )
+            full_text = "\n".join(text_content)
+
+            if not full_text or len(full_text.strip()) < 10:
+                logger.warning("Extracted very short or empty text from the PDF.")
 
             logger.info(
-                f"Successfully extracted text with length {len(text)} characters"
+                f"Successfully extracted text with length {len(full_text)} characters"
             )
-            return text
+            return full_text
+
         except Exception as e:
-            logger.error(
-                f"Error during pdfplumber text extraction: {str(e)}", exc_info=True
-            )
+            logger.error(f"Error during PDF text extraction: {str(e)}", exc_info=True)
             raise
 
     def _ensure_weaviate_connected(self):
@@ -423,7 +468,7 @@ class RAGPipeline:
                     1. Explain the *purpose* of that function in this context (“why sine/cosine for positional encoding?”).  
                     2. Give an intuitive analogy or real‑world metaphor (“treat each dimension like a clock hand…”).  
                     3. Break down each symbol and term with a toy example.  
-                    4. Contrast with an alternative (e.g., “they didn’t use linear or random encoding because…”).  
+                    4. Contrast with an alternative (e.g., “they didn't use linear or random encoding because…”).  
 
                     Your overall response should follow this structure (using markdown):
 
@@ -444,12 +489,12 @@ class RAGPipeline:
                     - **Math Breakdown:**  
                     1. **Equation (…), step by step:**  
                         - *Term 1* (symbol → meaning)  
-                        - *Term 2* (why chosen, e.g., “cosine gives smooth periodic variation”)  
+                        - *Term 2* (why chosen, e.g., "cosine gives smooth periodic variation")  
                         - *Why this function:* [deep why + alternative comparison]  
                     2. **Concrete Example:**  
                         - Numeric instantiation or simple code snippet  
 
-                    > **Always** include a short “Why this function?” mini‑section under every formula that tackles exactly why it was chosen and what would happen if you replaced it.
+                    > **Always** include a short "Why this function?" mini‑section under every formula that tackles exactly why it was chosen and what would happen if you replaced it.
 
                     # Examples & Applications  
                     _Practical scenarios, code sketches, or visual analogies that show how these math pieces work in practice._
