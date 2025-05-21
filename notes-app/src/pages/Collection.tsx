@@ -44,6 +44,9 @@ export function CollectionPage() {
   const navigate = useNavigate();
   const [userId, setUserId] = useState<number | null>(null);
   const [selectedPdf, setSelectedPdf] = useState<string | null>(null);
+  const [extractedReferences, setExtractedReferences] = useState<{ [key: string]: PrerequisitePaper[] }>({});
+  const [loadingReferences, setLoadingReferences] = useState<{ [key: string]: boolean }>({});
+  const [referenceError, setReferenceError] = useState<{ [key: string]: string }>({});
 
   useEffect(() => {
     const token = localStorage.getItem('access_token');
@@ -137,6 +140,25 @@ export function CollectionPage() {
     }
   };
 
+  const extractReferences = async (pdfId: string) => {
+    try {
+      setLoadingReferences(prev => ({ ...prev, [pdfId]: true }));
+      setReferenceError(prev => ({ ...prev, [pdfId]: '' }));
+      
+      const response = await axiosClient.post(`/extract-references/${pdfId}`);
+      
+      setExtractedReferences((prev) => ({ ...prev, [pdfId]: response.data }));
+    } catch (error: any) {
+      console.error('Error extracting references:', error);
+      setReferenceError(prev => ({ 
+        ...prev, 
+        [pdfId]: error.response?.data?.detail || 'Failed to extract references' 
+      }));
+    } finally {
+      setLoadingReferences(prev => ({ ...prev, [pdfId]: false }));
+    }
+  };
+
   if (loading) {
     return <div>Loading your collection...</div>;
   }
@@ -161,12 +183,21 @@ export function CollectionPage() {
                   {pdf.file_name} {pdf.processing_status !== 'completed' && '(Processing...)'}
                 </div>
                 {pdf.processing_status === 'completed' && (
-                  <button 
-                    className="related-papers-button"
-                    onClick={() => toggleRelatedPapers(pdf.id)}
-                  >
-                    {selectedPdf === pdf.id ? 'Hide Related Papers' : 'Show Related Papers'}
-                  </button>
+                  <div className="pdf-actions">
+                    <button 
+                      className="related-papers-button"
+                      onClick={() => toggleRelatedPapers(pdf.id)}
+                    >
+                      {selectedPdf === pdf.id ? 'Hide Related Papers' : 'Show Related Papers'}
+                    </button>
+                    <button 
+                      className="extract-references-button"
+                      onClick={() => extractReferences(pdf.id)}
+                      disabled={loadingReferences[pdf.id]}
+                    >
+                      {loadingReferences[pdf.id] ? 'Extracting...' : 'Extract References'}
+                    </button>
+                  </div>
                 )}
               </div>
               
@@ -242,6 +273,43 @@ export function CollectionPage() {
                     </ul>
                   ) : (
                     <div className="no-prereqs">No prerequisite papers found</div>
+                  )}
+                </div>
+              )}
+              
+              {extractedReferences[pdf.id] && (
+                <div className="extracted-references-section">
+                  <h3>Extracted References</h3>
+                  {loadingReferences[pdf.id] ? (
+                    <div className="loading-references">Extracting references...</div>
+                  ) : referenceError[pdf.id] ? (
+                    <div className="reference-error">{referenceError[pdf.id]}</div>
+                  ) : extractedReferences[pdf.id].length > 0 ? (
+                    <ul className="extracted-references-list">
+                      {extractedReferences[pdf.id].map((reference, index) => (
+                        <li key={index} className="reference-item">
+                          <h4>
+                            {reference.url ? (
+                              <a href={reference.url} target="_blank" rel="noopener noreferrer">
+                                {reference.title}
+                              </a>
+                            ) : (
+                              reference.title
+                            )}
+                          </h4>
+                          <p className="reference-meta">
+                            {reference.authors.length > 0 && (
+                              <>Authors: {reference.authors.join(', ')} | </>
+                            )}
+                            {reference.publication_year > 0 && (
+                              <>Year: {reference.publication_year}</>
+                            )}
+                          </p>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <div className="no-references">No references extracted</div>
                   )}
                 </div>
               )}

@@ -67,6 +67,8 @@ import json
 from search import search_arxiv, search_elastic, index_arxiv_paper
 from redis_config import get_cached_data, set_cached_data, CACHE_EXPIRATION
 import uuid
+import re
+import tempfile
 
 
 load_dotenv()
@@ -1014,32 +1016,25 @@ async def get_prerequisite_papers_exa(request: PrerequisitePapersRequest):
 
         exa = ExaSearch()
 
-        # Use title if provided, otherwise use DOI
         search_query = request.title if request.title else request.doi
         if not search_query:
             raise HTTPException(
                 status_code=400, detail="Either title or DOI must be provided"
             )
 
-        # Get PDF summary from history if available
         summary_terms = []
         try:
-            # Extract the document ID from the title (assuming format: "doc_id_title")
             doc_id = search_query.split("_")[0] if "_" in search_query else None
 
             if doc_id:
-                # Query the history table for the summary
                 db = sessionLocal()
                 try:
                     history_entry = (
                         db.query(models.History).filter_by(doc_id=doc_id).first()
                     )
                     if history_entry and history_entry.analysis:
-                        # Extract key terms from the summary (first 200 words)
                         summary_text = history_entry.analysis
-                        # Split into words and take first 200
                         words = summary_text.split()[:200]
-                        # Join back and use as additional context
                         summary_terms = " ".join(words)
                 finally:
                     db.close()
@@ -1068,13 +1063,10 @@ async def get_prerequisite_papers_exa(request: PrerequisitePapersRequest):
         except Exception as e:
             logger.warning(f"Failed to fetch citations: {str(e)}")
 
-        # Combine title, summary terms, and citations for better context
-        # Prioritize title and summary terms
         search_content = f"{search_query} {summary_terms}"
         if citations:
             search_content += " " + " ".join(citations)
 
-        # Search for related papers with enhanced context
         results = exa.search_related_papers(
             content=search_content,
             filters=["machine learning", "deep learning", "NLP", "AI"],
@@ -1257,7 +1249,7 @@ async def get_papers_with_code():
             {
                 "id": "error3",
                 "title": "A Survey on Evaluation of Large Language Models",
-            "abstract": "The rapid advancement of Large Language Models (LLMs) has revolutionized natural language processing. This survey provides a comprehensive review of evaluation methods for LLMs.",
+                "abstract": "The rapid advancement of Large Language Models (LLMs) has revolutionized natural language processing. This survey provides a comprehensive review of evaluation methods for LLMs.",
                 "url_pdf": "https://arxiv.org/pdf/2307.03109",
                 "url_abs": "https://arxiv.org/abs/2307.03109",
                 "published": "2023-07-06",
@@ -1276,7 +1268,6 @@ async def get_prerequisite_papers(request: PrerequisitePapersRequest):
     if cached_data:
         return json.loads(cached_data)
 
-    # If not in cache, get prerequisite papers
     results = await get_prerequisite_papers_logic(request)
 
     # Cache the results
@@ -1285,3 +1276,4 @@ async def get_prerequisite_papers(request: PrerequisitePapersRequest):
     )
 
     return results
+

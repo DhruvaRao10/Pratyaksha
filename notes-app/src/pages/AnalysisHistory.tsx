@@ -14,6 +14,8 @@ import {
 import { jwtDecode } from "jwt-decode";
 import { fetchUserAnalysisHistory } from "../services/analysisService";
 import { ToastContainer, toast } from "react-toastify";
+import ReactMarkdown from 'react-markdown';
+import rehypeRaw from 'rehype-raw';
 import "../styles/analysisHistory.css";
 import { Button } from "../ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "../ui/card";
@@ -24,7 +26,7 @@ export function AnalysisHistoryPage() {
   const [analysisHistory, setAnalysisHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState(null);
-  const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
+  const [expandedItems, setExpandedItems] = useState({});
 
   useEffect(() => {
     const token = localStorage.getItem("access_token");
@@ -65,71 +67,56 @@ export function AnalysisHistoryPage() {
     }
   };
 
-  const toggleExpand = (docId: string) => {
+  const toggleExpand = (docId) => {
     setExpandedItems(prev => ({
       ...prev,
       [docId]: !prev[docId]
     }));
   };
 
-  const formatAnalysis = (analysis: string) => {
-    if (!analysis) return '';
+  const MarkdownComponents = {
+    h1: ({node, ...props}) => <h1 className="text-2xl font-bold mb-4" {...props} />,
+    h2: ({node, ...props}) => <h2 className="text-xl font-bold mb-3" {...props} />,
+    h3: ({node, ...props}) => <h3 className="text-lg font-semibold mb-2" {...props} />,
+    h4: ({node, ...props}) => <h4 className="text-lg font-semibold mb-2" {...props} />,
     
-    // Split the analysis into sections
-    const sections = analysis.split('\n\n');
+    p: ({node, ...props}) => <p className="mb-3" {...props} />,
     
-    return sections.map((section, index) => {
-      if (section.startsWith('SUMMARY:') || section.startsWith('KEY CONCEPTS:')) {
-        return (
-          <div key={index} className="mb-4">
-            <h4 className="text-lg font-semibold text-white mb-2">{section.split(':')[0]}</h4>
-            <p className="text-white/90">{section.split(':')[1]?.trim()}</p>
-          </div>
-        );
-      }
-      
-      if (/^\d+\./.test(section)) {
-        const [number, ...content] = section.split('.');
-        return (
-          <div key={index} className="mb-3">
-            <p className="text-white/90">
-              <span className="font-semibold">{number}.</span>
-              {content.join('.').trim()}
-            </p>
-          </div>
-        );
-      }
-      
-      return (
-        <p key={index} className="text-white/90 mb-3">
-          {section.trim()}
-        </p>
-      );
-    });
+    ul: ({node, ...props}) => <ul className="list-disc list-inside mb-4 ml-2" {...props} />,
+    ol: ({node, ...props}) => <ol className="list-decimal list-inside mb-4 ml-2" {...props} />,
+    li: ({node, ...props}) => <li className="mb-1" {...props} />,
+    
+    em: ({node, ...props}) => <em className="italic" {...props} />,
+    strong: ({node, ...props}) => <strong className="font-bold" {...props} />,
+    
+    code: ({node, inline, ...props}) => 
+      inline 
+        ? <code className="font-mono bg-slate-100 px-1 rounded" {...props} />
+        : <code className="font-mono block bg-slate-100 p-3 rounded my-4 text-sm overflow-x-auto" {...props} />,
   };
 
   return (
-    <div className="main-gradient-bg min-h-screen overflow-y-auto">
+    <div className="light-gradient-bg min-h-screen overflow-y-auto">
       <FloatingShapes />
-      <div className="content-overlay container px-4 max-w-7xl mx-auto overflow-y-auto py-16">
+      <div className="container px-4 max-w-7xl mx-auto overflow-y-auto py-16">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="space-y-12"
+          className="space-y-8"
         >
-          <div className="flex justify-between items-center mb-12">
+          <div className="flex justify-between items-center page-header">
             <div> 
-              <h1 className="text-4xl font-bold mb-2 text-white glow-text">
+              <h1 className="page-title">
                 Analysis History
               </h1>
-              <p className="text-xl text-white/80">
+              <p className="page-description">
                 Your previous document analysis and insights
               </p>
             </div>
             <Button
               variant="outline"
               onClick={fetchHistory}
-              className="border-white/20 text-white hover:bg-white/10"
+              className="refresh-button"
             >
               <IconHistory size={16} className="mr-2" />
               Refresh
@@ -140,19 +127,19 @@ export function AnalysisHistoryPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="premium-glass rounded-xl overflow-hidden p-6"
+            className="card-container"
           >
             {loading ? (
               <Center py="xl" className="loading-container">
                 <Loader color="blue" size="lg" />
               </Center>
             ) : analysisHistory.length === 0 ? (
-              <div className="text-center py-12">
-                <IconAlertCircle size={48} className="text-white/50 mx-auto mb-4" />
-                <Text className="text-white font-semibold text-xl mb-2">
+              <div className="empty-state">
+                <IconAlertCircle size={48} className="empty-state-icon mx-auto mb-4" />
+                <Text className="empty-state-title">
                   No analysis history found
                 </Text>
-                <Text className="text-white/70">
+                <Text className="empty-state-text">
                   Upload and analyze documents to see your history here
                 </Text>
               </div>
@@ -161,17 +148,17 @@ export function AnalysisHistoryPage() {
                 {analysisHistory.map((item, index) => (
                   <Card 
                     key={index} 
-                    className="bg-white/10 backdrop-blur-sm border border-white/20 shadow-lg hover:shadow-xl transition-all duration-300"
+                    className="history-card"
                   >
-                    <CardHeader className="p-5 flex flex-row items-center space-y-0 gap-4">
-                      <div className="bg-primary/20 p-3 rounded-lg">
-                        <IconFileText size={24} className="text-primary" />
+                    <div className="card-header">
+                      <div className="icon-container">
+                        <IconFileText size={24} className="icon-primary" />
                       </div>
                       <div className="flex-1">
-                        <h3 className="text-lg font-medium text-white mb-1">
+                        <h3 className="card-title">
                           {item.file_name}
                         </h3>
-                        <p className="text-sm text-white/60">
+                        <p className="card-subtitle">
                           {new Date(item.timestamp).toLocaleDateString(
                             "en-US",
                             {
@@ -184,26 +171,29 @@ export function AnalysisHistoryPage() {
                           )}
                         </p>
                       </div>
-                      <Badge variant="secondary" className="bg-primary/20 text-white mr-2">
+                      <Badge className="status-badge mr-2">
                         Document
                       </Badge>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="text-white hover:bg-white/10" 
+                      <button 
+                        className="toggle-button" 
                         onClick={() => toggleExpand(item.doc_id)}
                       >
                         <IconChevronRight 
                           size={20} 
                           className={`transition-transform duration-300 ${expandedItems[item.doc_id] ? 'rotate-90' : ''}`} 
                         />
-                      </Button>
-                    </CardHeader>
+                      </button>
+                    </div>
                     
                     {expandedItems[item.doc_id] && (
                       <CardContent className="px-5 pt-0 pb-5">
-                        <div className="bg-white/5 p-6 mt-2 rounded-lg backdrop-blur-sm border border-white/10 shadow-inner">
-                          {formatAnalysis(item.analysis)}
+                        <div className="content-wrapper markdown-content">
+                          <ReactMarkdown 
+                            rehypePlugins={[rehypeRaw]} 
+                            components={MarkdownComponents}
+                          >
+                            {item.analysis}
+                          </ReactMarkdown>
                         </div>
                       </CardContent>
                     )}

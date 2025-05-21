@@ -4,13 +4,13 @@
 
 :root {
   --background: 212 30% 15%;
-  --foreground: 210 40% 98%;
+  --foreground: 0 0% 0%;
   
   --card: 212 30% 12%;
-  --card-foreground: 210 40% 98%;
+  --card-foreground: 0 0% 0%;
   
   --popover: 212 30% 15%;
-  --popover-foreground: 210 40% 98%;
+  --popover-foreground: 0 0% 0%;
   
   --primary: 221.2 83.2% 53.3%;
   --primary-foreground: 210 40% 98%;
@@ -19,7 +19,7 @@
   --secondary-foreground: 210 40% 98%;
   
   --muted: 217.2 32.6% 22%;
-  --muted-foreground: 215 20.2% 75.1%;
+  --muted-foreground: 0 0% 45%;
   
   --accent: 217.2 32.6% 25%;
   --accent-foreground: 210 40% 98%;
@@ -34,25 +34,25 @@
 
 .light {
   --background: 0 0% 98%;
-  --foreground: 222.2 47.4% 11.2%;
+  --foreground: 0 0% 0%;
   
   --card: 0 0% 100%;
-  --card-foreground: 222.2 47.4% 11.2%;
+  --card-foreground: 0 0% 0%;
   
   --popover: 0 0% 100%;
-  --popover-foreground: 222.2 47.4% 11.2%;
+  --popover-foreground: 0 0% 0%;
   
   --primary: 221.2 83.2% 53.3%;
   --primary-foreground: 210 40% 98%;
   
   --secondary: 210 40% 96.1%;
-  --secondary-foreground: 222.2 47.4% 11.2%;
+  --secondary-foreground: 0 0% 0%;
   
   --muted: 210 40% 96.1%;
-  --muted-foreground: 215.4 16.3% 46.9%;
+  --muted-foreground: 0 0% 45%;
   
   --accent: 210 40% 96.1%;
-  --accent-foreground: 222.2 47.4% 11.2%;
+  --accent-foreground: 0 0% 0%;
   
   --destructive: 0 84.2% 60.2%;
   --destructive-foreground: 210 40% 98%;
@@ -62,20 +62,18 @@
   --ring: 221.2 83.2% 53.3%;
 }
 
-/* Enable scrolling globally */
 html, body {
   overflow-y: auto !important;
   height: 100%;
 }
-
-/* Modern Background */
+/* 
 .main-gradient-bg {
   background-image: url('https://images.unsplash.com/photo-1635776062127-d379bfcba9f4?q=80&w=2532&auto=format&fit=crop');
   background-size: cover;
   background-position: center;
   background-attachment: fixed;
   position: relative;
-}
+} */
 
 .main-gradient-bg::before {
   content: '';
@@ -84,7 +82,7 @@ html, body {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(110deg, rgba(0, 0, 0, 0.7) 0%, rgba(13, 26, 58, 0.85) 100%);
+  /* background: linear-gradient(110deg, rgba(0, 0, 0, 0.7) 0%, rgba(13, 26, 58, 0.85) 100%); */
   z-index: 0;
 }
 
@@ -93,7 +91,6 @@ html, body {
   z-index: 1;
 }
 
-/* Animated gradient background */
 .animated-gradient {
   background: linear-gradient(-45deg, #1e3a8a, #1e40af, #3b82f6, #60a5fa);
   background-size: 400% 400%;
@@ -171,9 +168,6 @@ html, body {
   border-radius: 1rem;
 }
 
-.glass-text {
-  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.5);
-}
 
 /* Floating Animations */
 @keyframes float {
@@ -224,4 +218,262 @@ html, body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(80, 130, 200, 0.8);
+}
+
+/* Global styles for Intuit Notes */
+
+/* Light-themed background */
+.light-gradient-bg {
+  background: linear-gradient(135deg, #f0f4ff 0%, #eef2ff 50%, #ecfdf5 100%);
+  min-height: 100vh;
+}
+
+/* Container styling */
+.content-container {
+  padding: 2rem 0;
+}
+
+/* Card container */
+.card-container {
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 
+              0 8px 10px -6px rgba(0, 0, 0, 0.02);
+  border: 1px solid #f1f5f9;
+  overflow: hidden;
+  padding: 1.5rem;
+}
+
+/* Page header section */
+.page-header {
+  margin-bottom: 2rem;
+}
+
+.page-title {
+  color: #1e293b;
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  letter-spacing: -0.025em;
+}
+
+.page-description {
+  color: #64748b;
+  font-size: 1.125rem;
+}
+
+/* Button styling */
+.primary-button {
+  background: #4f46e5;
+  color: white;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.primary-button:hover {
+  background: #4338ca;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.secondary-button {
+  background: white;
+  color: #4f46e5;
+  border: 1px solid #e2e8f0;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.secondary-button:hover {
+  background: #f8fafc;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+/* Loading state */
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+}
+
+/* Animated background elements */
+.floating-shape {
+  animation: float 15s ease-in-out infinite alternate;
+  opacity: 0.5;
+}
+
+.floating-shape-delayed {
+  animation: float 20s ease-in-out infinite alternate-reverse;
+  opacity: 0.5;
+}
+
+@keyframes float {
+  0% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  50% {
+    transform: translate(50px, 25px) rotate(5deg);
+  }
+  100% {
+    transform: translate(-50px, -25px) rotate(-5deg);
+  }
+}
+
+/* Empty state styling */
+.empty-state {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 3rem 2rem;
+  text-align: center;
+  border: 1px solid #e2e8f0;
+}
+
+.empty-state-icon {
+  color: #94a3b8;
+  margin-bottom: 1rem;
+}
+
+.empty-state-title {
+  color: #1e293b;
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.empty-state-text {
+  color: #64748b;
+}
+
+/* Common card styling */
+.standard-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05),
+              0 2px 4px -2px rgba(0, 0, 0, 0.03);
+  transition: all 0.3s ease;
+  border: 1px solid #f1f5f9;
+  overflow: hidden;
+}
+
+.standard-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 15px 30px -5px rgba(0, 0, 0, 0.07), 
+              0 10px 15px -5px rgba(0, 0, 0, 0.05);
+}
+
+/* Form inputs */
+.input-container {
+  position: relative;
+  margin-bottom: 1rem;
+}
+
+.standard-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background-color: white;
+  color: #1e293b;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+}
+
+.standard-input:focus {
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+  outline: none;
+}
+
+.standard-input::placeholder {
+  color: #94a3b8;
+}
+
+/* Search specific */
+.search-input-wrapper {
+  display: flex;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: white;
+  overflow: hidden;
+}
+
+.search-input {
+  flex: 1;
+  border: none;
+  padding: 0.75rem 1rem;
+  color: #1e293b;
+  font-size: 1rem;
+}
+
+.search-input:focus {
+  outline: none;
+}
+
+.search-button {
+  background: #4f46e5;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.search-button:hover {
+  background: #4338ca;
+}
+
+/* Status badges */
+.status-badge {
+  background: rgba(79, 70, 229, 0.1);
+  color: #4f46e5;
+  font-weight: 500;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Icon container */
+.icon-container {
+  background: rgba(79, 70, 229, 0.1);
+  padding: 0.75rem;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon-primary {
+  color: #4f46e5;
+}
+
+/* Applying for mantine components */
+/* Mantine overrides if needed */
+.mantine-input {
+  border-color: #e2e8f0 !important;
+}
+
+.mantine-input:focus {
+  border-color: #4f46e5 !important;
+}
+
+/* Animation for transitions */
+.transition-all {
+  transition: all 0.3s ease;
+}
+
+.main-container {
+  container: px-4 max-w-7xl mx-auto py-16;
 }

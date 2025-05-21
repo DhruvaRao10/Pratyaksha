@@ -1,12 +1,13 @@
 // @ts-nocheck
 import { useState, useEffect } from 'react';
 import { notifications } from '@mantine/notifications';
-import { IconCheck, IconX } from '@tabler/icons-react';
+import { IconCheck, IconX, IconUpload } from '@tabler/icons-react';
 import { motion } from 'framer-motion';
 import axiosClient from '../services/axiosInstance';
 import { jwtDecode } from 'jwt-decode';
 import { toast } from 'react-toastify';
 import { UploadSvgIcon } from '../styles/uploadSvg';
+import FloatingShapes from '../components/FloatingShapes';
 
 import '../styles/upload.css';
 
@@ -15,7 +16,6 @@ export function UploadPage() {
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [userId, setUserId] = useState(null);
-  const [activeTab, setActiveTab] = useState('file');
 
   useEffect(() => {
     const token = localStorage.getItem('access_token');
@@ -93,44 +93,54 @@ export function UploadPage() {
   };
 
   return (
-    <div className="upload-container">
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <h2 className="page-title">Upload Content</h2>
-        
-        <div className="file-upload">
-          <div 
-            className="upload-area"
-            onDrop={handleDrop}
-            onDragOver={handleDragOver}
-          >
-            <span className="icon"><UploadSvgIcon/></span>
-            <p>Drop your file here or click to browse</p>
-            <input type="file" onChange={handleFileChange} />
-            {file && <p className="selected-file">Selected: {file.name}</p>}
-            <p className="note">Max file size: 5MB</p>
-          </div>
-        </div>
-        
-        <button 
-          className="submit-button" 
-          onClick={handleSubmit} 
-          disabled={uploading || !file}
+    <div className="light-gradient-bg min-h-screen">
+      <FloatingShapes />
+      <div className="container px-4 max-w-7xl mx-auto py-16">
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="card-container"
         >
-          {uploading ? 'Uploading...' : 'Upload'}
-        </button>
-        
-        {uploading && (
-          <div className="progress-container">
-            <div className="progress-bar">
-              <div className="progress-fill" style={{ width: `${progress}%` }}></div>
+          <div className="upload-header">
+            <h2 className="upload-title">Upload Content</h2>
+            <p className="upload-description">Upload your PDF documents for analysis and insights</p>
+          </div>
+          
+          <div className="file-upload">
+            <div 
+              className="upload-area"
+              onDrop={handleDrop}
+              onDragOver={handleDragOver}
+            >
+              <div className="upload-icon">
+                <IconUpload size={48} stroke={1.5} />
+              </div>
+              <p>Drop your file here or click to browse</p>
+              <input type="file" onChange={handleFileChange} />
+              {file && <p className="selected-file">Selected: {file.name}</p>}
+              <p className="note">Max file size: 5MB | Supported formats: PDF</p>
             </div>
           </div>
-        )}
-      </motion.div>
+          
+          <button 
+            className="submit-button" 
+            onClick={handleSubmit} 
+            disabled={uploading || !file}
+          >
+            {uploading ? 'Processing...' : 'Upload Document'}
+          </button>
+          
+          {uploading && (
+            <div className="progress-container">
+              <div className="progress-bar">
+                <div className="progress-fill" style={{ width: `${progress}%` }}></div>
+              </div>
+              <p className="text-center text-sm mt-2 text-slate-500">{progress}% Complete</p>
+            </div>
+          )}
+        </motion.div>
+      </div>
     </div>
   );
 }

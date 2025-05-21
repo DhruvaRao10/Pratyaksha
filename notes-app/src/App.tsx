@@ -7,7 +7,6 @@ import {
   useMantineColorScheme,
 } from "@mantine/core";
 import { useHotkeys } from "@mantine/hooks";
-import { Notifications } from "@mantine/notifications";
 import { HomePage } from "./pages/Home";
 import { UploadPage } from "./pages/Upload";
 import { YouTubePage } from "./pages/YouTube";
@@ -23,7 +22,7 @@ import { AppLayout } from "./components/AppLayout";
 import { CollectionPage } from "./pages/Collection";
 import { PDFViewerPage } from "./pages/PDFviewerPage";
 import { GraphViewPage } from "./pages/GraphView";
-import "./styles/collection.css"; // Keep if specific to collection page
+import "./styles/collection.css";
 import "./styles/global.css"
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -68,27 +67,15 @@ export default function App() {
   return (
     // Wrap with MantineProvider using your theme and color scheme manager
     <MantineProvider theme={theme} colorSchemeManager={colorSchemeManager}>
-      {/* Notifications and Hotkey handler within Mantine context */}
-      <Notifications position="top-right" />
       <ColorSchemeToggleHotkey />
-      {/* ToastContainer outside MantineProvider if it's not Mantine's */}
       <ToastContainer />
 
-      {/*
-        ModeToggle can be placed here if you want it outside the layout,
-        or inside AppLayout if you want it in the sidebar/header.
-      */}
       {isAuthenticated && (
-          <div className="absolute top-4 right-4 z-50"> {/* Position absolutely */}
-              {/* <ModeToggle /> */}
+          <div className="absolute top-4 right-4 z-50"> 
           </div>
       )}
 
 
-      {/*
-        The main content area and layout is now handled by AppLayout.
-        Remove the background/padding classes here as they are in global.css/AppLayout.
-      */}
        <AppLayout>
         <Routes>
           <Route path="/login" element={<Login />} />

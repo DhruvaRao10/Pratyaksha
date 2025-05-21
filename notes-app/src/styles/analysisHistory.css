@@ -1,124 +1,292 @@
 /* analysisHistory.css */
 .analysis-app-shell {
-    background-color: transparent;
+  background-color: #f8fafc;
+}
+
+/* Animated background elements */
+.floating-shape {
+  animation: float 15s ease-in-out infinite alternate;
+  opacity: 0.5;
+}
+
+.floating-shape-delayed {
+  animation: float 20s ease-in-out infinite alternate-reverse;
+  opacity: 0.5;
+}
+
+@keyframes float {
+  0% {
+    transform: translate(0, 0) rotate(0deg);
   }
-  
-  /* Animated background elements */
-  .floating-shape {
-    animation: float 15s ease-in-out infinite alternate;
+  50% {
+    transform: translate(50px, 25px) rotate(5deg);
   }
-  
-  .floating-shape-delayed {
-    animation: float 20s ease-in-out infinite alternate-reverse;
+  100% {
+    transform: translate(-50px, -25px) rotate(-5deg);
   }
-  
-  @keyframes float {
-    0% {
-      transform: translate(0, 0) rotate(0deg);
-    }
-    50% {
-      transform: translate(50px, 25px) rotate(5deg);
-    }
-    100% {
-      transform: translate(-50px, -25px) rotate(-5deg);
-    }
-  }
-  
-  /* Header styling */
-  .analysis-title {
-    font-size: 2.5rem;
-    margin-bottom: 0.5rem;
-    background: linear-gradient(to right, rgb(124, 58, 237), rgb(168, 85, 247));
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    font-weight: 700;
-  }
-  
-  .subtitle {
-    color: #6b7280;
-    margin-top: 0.5rem;
-    font-size: 1.125rem;
-  }
-  
-  /* Content container */
-  .content-container {
-    padding: 2rem 0;
-  }
-  
-  /* Enhanced Card Styling */
-  .premium-glass {
-    background: rgba(15, 23, 42, 0.75);
-    backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 
-      0 10px 15px -3px rgba(0, 0, 0, 0.1),
-      0 4px 6px -4px rgba(0, 0, 0, 0.1);
-  }
-  
-  /* History card styling */
-  .bg-white\/10 {
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(16px);
-    box-shadow: 
-      0 4px 6px -1px rgba(0, 0, 0, 0.1),
-      0 2px 4px -2px rgba(0, 0, 0, 0.1);
-    transition: all 0.3s ease;
-  }
-  
-  .bg-white\/10:hover {
-    transform: translateY(-2px);
-    box-shadow: 
-      0 10px 25px -5px rgba(0, 0, 0, 0.1), 
-      0 8px 10px -6px rgba(0, 0, 0, 0.1);
-  }
-  
-  /* Card content styling */
-  .shadow-inner {
-    box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.25);
-  }
-  
-  /* File icon styling */
-  .bg-primary\/20 {
-    background: rgba(139, 92, 246, 0.2);
-    box-shadow: 0 0 20px rgba(139, 92, 246, 0.2);
-  }
-  
-  .text-primary {
-    color: rgb(139, 92, 246);
-  }
-  
-  /* Badge styling */
-  .bg-primary\/20.text-white {
-    background: rgba(139, 92, 246, 0.2);
-    color: white;
-    box-shadow: 0 0 10px rgba(139, 92, 246, 0.1);
-    border: 1px solid rgba(139, 92, 246, 0.2);
-  }
-  
-  /* Loading state */
-  .loading-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 200px;
-  }
-  
-  /* Empty state styling */
-  .text-center.py-12 {
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(8px);
-    border-radius: 12px;
-    padding: 2rem;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-  }
-  
-  /* Animation for card expansion */
-  .transition-transform {
-    transition: transform 0.3s ease;
-  }
-  
-  /* Glow effect for titles */
-  .glow-text {
-    text-shadow: 0 0 30px rgba(139, 92, 246, 0.5);
-  }
+}
+
+/* Light-themed background */
+.light-gradient-bg {
+  background: linear-gradient(135deg, #f0f4ff 0%, #eef2ff 50%, #ecfdf5 100%);
+  min-height: 100vh;
+}
+
+/* Header styling */
+.analysis-title {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+  background: linear-gradient(to right, #4f46e5, #7c3aed);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+
+.subtitle {
+  color: #4b5563;
+  margin-top: 0.5rem;
+  font-size: 1.125rem;
+  font-weight: 400;
+}
+
+/* Content container */
+.content-container {
+  padding: 2rem 0;
+}
+
+/* Enhanced Card Styling */
+.card-container {
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 
+              0 8px 10px -6px rgba(0, 0, 0, 0.02);
+  border: 1px solid #f1f5f9;
+  overflow: hidden;
+  padding: 1.5rem;
+}
+
+/* History card styling */
+.history-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05),
+              0 2px 4px -2px rgba(0, 0, 0, 0.03);
+  transition: all 0.3s ease;
+  border: 1px solid #f1f5f9;
+  overflow: hidden;
+}
+
+.history-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 15px 30px -5px rgba(0, 0, 0, 0.07), 
+              0 10px 15px -5px rgba(0, 0, 0, 0.05);
+}
+
+/* Card header styling */
+.card-header {
+  padding: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+/* Icon container styling */
+.icon-container {
+  background: rgba(79, 70, 229, 0.1);
+  padding: 0.75rem;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon-primary {
+  color: #4f46e5;
+}
+
+/* Card content styling */
+.content-wrapper {
+  background: #f8fafc;
+  padding: 1.5rem;
+  margin-top: 0.75rem;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+/* Text styling */
+.card-title {
+  color: #1e293b;
+  font-weight: 600;
+  font-size: 1.125rem;
+  margin-bottom: 0.25rem;
+}
+
+.card-subtitle {
+  color: #64748b;
+  font-size: 0.875rem;
+}
+
+/* Badge styling */
+.status-badge {
+  background: rgba(79, 70, 229, 0.1);
+  color: #4f46e5;
+  font-weight: 500;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+}
+
+/* Loading state */
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+}
+
+/* Empty state styling */
+.empty-state {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 3rem 2rem;
+  text-align: center;
+  border: 1px solid #e2e8f0;
+}
+
+.empty-state-icon {
+  color: #94a3b8;
+  margin-bottom: 1rem;
+}
+
+.empty-state-title {
+  color: #1e293b;
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.empty-state-text {
+  color: #64748b;
+}
+
+/* Animation for card expansion */
+.transition-transform {
+  transition: transform 0.3s ease;
+}
+
+/* Refresh button styling */
+.refresh-button {
+  background: white;
+  color: #4f46e5;
+  border: 1px solid #e2e8f0;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.refresh-button:hover {
+  background: #f8fafc;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+/* Markdown content styling */
+.markdown-content h1 {
+  color: #1e293b;
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.markdown-content h2 {
+  color: #334155;
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+}
+
+.markdown-content h3, .markdown-content h4 {
+  color: #475569;
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.markdown-content p {
+  color: #334155;
+  margin-bottom: 1rem;
+  line-height: 1.6;
+}
+
+.markdown-content ul, .markdown-content ol {
+  margin-left: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.markdown-content li {
+  color: #334155;
+  margin-bottom: 0.25rem;
+}
+
+.markdown-content code {
+  background: #f1f5f9;
+  color: #0f172a;
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.875rem;
+}
+
+.markdown-content pre {
+  background: #f1f5f9;
+  border-radius: 8px;
+  padding: 1rem;
+  overflow-x: auto;
+  margin: 1rem 0;
+}
+
+.markdown-content strong {
+  color: #0f172a;
+  font-weight: 600;
+}
+
+/* Toggle button styling */
+.toggle-button {
+  background: transparent;
+  color: #64748b;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.toggle-button:hover {
+  background: #f1f5f9;
+  color: #4f46e5;
+}
+
+/* Page heading section */
+.page-header {
+  margin-bottom: 2rem;
+}
+
+.page-title {
+  color: #1e293b;
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  letter-spacing: -0.025em;
+}
+
+.page-description {
+  color: #64748b;
+  font-size: 1.125rem;
+}

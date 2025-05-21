@@ -4,7 +4,7 @@ import { AppShell, Container, Title, Text, TextInput, Button, Paper, ThemeIcon }
 import { motion } from 'framer-motion';
 import { MainNav } from '../components/Navigation';
 import { IconBrandYoutube, IconCheck, IconX } from '@tabler/icons-react';
-import { notifications } from '@mantine/notifications';
+import { toast } from 'react-toastify';
 import axiosClient from "../services/axiosInstance";
 import { jwtDecode } from "jwt-decode";
 
@@ -48,12 +48,7 @@ export function YouTubePage() {
 
     // Check if we have a user ID
     if (!userId) {
-      notifications.show({
-        title: 'Error',
-        message: 'User ID not found. Please try logging in again.',
-        color: 'red',
-        icon: <IconX size={16} />,
-      });
+      toast.error('User ID not found. Please try logging in again.');
       return;
     }
 
@@ -67,22 +62,12 @@ export function YouTubePage() {
       
       console.log('YouTube processing response:', response.data);
       
-      notifications.show({
-        title: "Success",
-        message: "YouTube video processing started",
-        color: "green",
-        icon: <IconCheck size={16} />,
-      });
+      toast.success("YouTube video processing started");
       
       setYoutubeUrl('');
     } catch (error) {
       console.error("YouTube processing error:", error.response?.data || error);
-      notifications.show({
-        title: "Error",
-        message: error.response?.data?.detail || "Failed to process YouTube video. Please try again.",
-        color: "red",
-        icon: <IconX size={16} />,
-      });
+      toast.error(error.response?.data?.detail || "Failed to process YouTube video. Please try again.");
     } finally {
       setLoading(false);
     }

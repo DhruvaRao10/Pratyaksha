@@ -11,7 +11,7 @@ import {
   IconUserCircle,
   IconCheck
 } from '@tabler/icons-react';
-import { notifications } from '@mantine/notifications';
+import { toast } from 'react-toastify';
 
 export function SettingsPage() {
   const [darkMode, setDarkMode] = useState(false);
@@ -20,14 +20,8 @@ export function SettingsPage() {
   const [language, setLanguage] = useState('en');
 
   const handleSaveSettings = () => {
-    notifications.show({
-      title: "Success",
-      message: "Your settings have been saved",
-      color: "green",
-      icon: <IconCheck size={16} />,
-    });
+    toast.success("Your settings have been saved");
   };
-
 
   const SelectWithoutChevron = ({ children, ...props }) => (
     <Select

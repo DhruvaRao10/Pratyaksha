@@ -8,9 +8,11 @@ import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../ui/card";
-// import { Icons } from "@/components/ui/icons";
-import { notifications } from "@mantine/notifications";
+import { FaSun, FaMoon } from "react-icons/fa";
+import FloatingShapes from "../components/FloatingShapes";
+import { toast } from "react-toastify";
 import axiosClient from "../services/axiosInstance";
+import "../styles/auth.css";
 
 const Register = () => {
     const navigate = useNavigate();
@@ -73,20 +75,12 @@ const Register = () => {
                 }
             });
             
-            notifications.show({
-                title: "Success",
-                message: "Your account has been created successfully!",
-                color: "green"
-            });
+            toast.success("Your account has been created successfully!");
             
             console.log("Registration successful", response.data);
             navigate("/login");
         } catch (error) {
-            notifications.show({
-                title: "Error",
-                message: error.response?.data?.detail || "Registration failed. Please try again.",
-                color: "red"
-            });
+            toast.error(error.response?.data?.detail || "Registration failed. Please try again.");
             console.error("Registration error:", error.response?.data);
         } finally {
             setLoading(false);
@@ -94,90 +88,84 @@ const Register = () => {
     };
                 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
-            {/* Animated background shapes */}
-            <div className="fixed inset-0 overflow-hidden -z-10 pointer-events-none">
-                <div className="floating-shape w-[600px] h-[600px] rounded-full absolute -top-[300px] -right-[300px] blur-3xl bg-purple-500/5 dark:bg-violet-900/10"></div>
-                <div className="floating-shape-delayed w-[500px] h-[500px] rounded-full absolute -bottom-[250px] -left-[250px] blur-3xl bg-blue-500/5 dark:bg-indigo-900/10"></div>
-            </div>
+        <div className="light-gradient-bg auth-container">
+            <FloatingShapes />
             
-            {/* Theme toggle */}
             <Button
-                variant="ghost"
+                variant="outline"
                 size="icon"
-                className="absolute top-4 right-4"
+                className="theme-toggle"
                 onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
             >
-                {/* {theme === "dark" ? <Icons.sun className="h-5 w-5" /> : <Icons.moon className="h-5 w-5" />} */}
+                {theme === "dark" ? <FaMoon /> : <FaSun />}
             </Button>
 
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
-                className="w-full max-w-md px-4"
+                className="px-4 w-full max-w-md"
             >
-                <Card className="backdrop-blur-lg bg-white/80 dark:bg-gray-900/80 border-gray-200 dark:border-gray-800">
-                    <CardHeader className="space-y-1">
-                        <CardTitle className="text-2xl font-bold text-center bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">
+                <Card className="auth-card">
+                    <CardHeader className="auth-header">
+                        <CardTitle className="auth-title">
                             Create Account
                         </CardTitle>
-                        <CardDescription className="text-center">
-                            Join Intuit Notes and start organizing your thoughts
+                        <CardDescription className="auth-description">
+                            Join Pratyaksha and start organizing your research
                         </CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="username">Username</Label>
+                    <CardContent className="auth-content">
+                        <div className="auth-input-group">
+                            <Label htmlFor="username" className="auth-label">Username</Label>
                             <Input
                                 id="username"
                                 type="text"
                                 placeholder="Your username"
                                 value={name}
                                 onChange={(e) => setName(e.target.value)}
-                                className={nameError ? "border-red-500" : ""}
+                                className={nameError ? "auth-input error" : "auth-input"}
                             />
-                            {nameError && <p className="text-sm text-red-500">{nameError}</p>}
+                            {nameError && <p className="auth-error-message">{nameError}</p>}
                         </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="email">Email</Label>
+                        <div className="auth-input-group">
+                            <Label htmlFor="email" className="auth-label">Email</Label>
                             <Input
                                 id="email"
                                 type="email"
                                 placeholder="you@example.com"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                className={emailError ? "border-red-500" : ""}
+                                className={emailError ? "auth-input error" : "auth-input"}
                             />
-                            {emailError && <p className="text-sm text-red-500">{emailError}</p>}
+                            {emailError && <p className="auth-error-message">{emailError}</p>}
                         </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="password">Password</Label>
+                        <div className="auth-input-group">
+                            <Label htmlFor="password" className="auth-label">Password</Label>
                             <Input
                                 id="password"
                                 type="password"
                                 placeholder="Create a password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                className={passwordError ? "border-red-500" : ""}
+                                className={passwordError ? "auth-input error" : "auth-input"}
                             />
-                            {passwordError && <p className="text-sm text-red-500">{passwordError}</p>}
+                            {passwordError && <p className="auth-error-message">{passwordError}</p>}
                         </div>
                         <Button
-                            className="w-full bg-gradient-to-r from-violet-600 to-purple-600 hover:opacity-90"
+                            className="auth-button"
                             onClick={handleRegister}
                             disabled={loading}
                         >
-                            {/* {loading && <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />} */}
-                            Create Account
+                            {loading ? "Creating Account..." : "Create Account"}
                         </Button>
                     </CardContent>
-                    <CardFooter>
-                        <p className="text-center text-sm text-muted-foreground w-full">
+                    <CardFooter className="auth-footer">
+                        <p className="auth-footer-text">
                             Already have an account?{" "}
                             <Link
                                 to="/login"
-                                className="text-violet-600 hover:text-violet-700 dark:text-violet-400 dark:hover:text-violet-300"
+                                className="auth-link"
                             >
                                 Sign in
                             </Link>

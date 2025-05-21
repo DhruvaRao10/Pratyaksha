@@ -18,6 +18,7 @@ import {
   Button as MantineButton,
   Modal,
   Tabs,
+  Loader,
 } from "@mantine/core";
 import { motion } from "framer-motion";
 import {
@@ -44,6 +45,8 @@ import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import FloatingShapes from "../components/FloatingShapes";
 import { TrendingPapers } from "../components/TrendingPapers";
+import { SearchIcon } from "../styles/searchIcon";
+import "../styles/homePage.css";
 
 interface Paper {
   id: string;
@@ -98,13 +101,18 @@ export function HomePage() {
         id: item.id,
         arxiv_id: item.ids?.arxiv,
         title: item.display_name,
-        abstract: item.abstract || (item.abstract_inverted_index ? Object.keys(item.abstract_inverted_index).join(" ") : ""),
+        abstract:
+          item.abstract ||
+          (item.abstract_inverted_index
+            ? Object.keys(item.abstract_inverted_index).join(" ")
+            : ""),
         published_date: item.publication_date,
         url_pdf: item.open_access?.url,
         url_abs: item.primary_location?.landing_page_url,
         repositories: [],
         datasets: [],
-        categories: item.categories?.map((category: any) => category.display_name) || [],
+        categories:
+          item.categories?.map((category: any) => category.display_name) || [],
       }));
       setPapers(mappedPapers);
     } catch (err) {
@@ -115,8 +123,8 @@ export function HomePage() {
   }, []);
 
   useEffect(() => {
-    fetchPapers(); // Default query "machine learning"
-  }, [fetchPapers]); // Only depends on fetchPapers
+    fetchPapers(); 
+  }, [fetchPapers]); 
   const handleSearch = () => {
     fetchPapers(query.trim() || "machine learning");
   };
@@ -155,327 +163,240 @@ export function HomePage() {
     return null;
   };
 
-  const featurePages = [
-    {
-      title: "Upload PDF",
-      description:
-        "Upload and analyze research papers, articles, and other academic documents.",
-      path: "/upload",
-      icon: <IconFileText className="h-5 w-5 mr-2" />,
-    },
-    {
-      title: "YouTube Import",
-      description:
-        "Import educational content from YouTube videos and convert them into interactive notes.",
-      path: "/youtube-import",
-      icon: <IconBrain className="h-5 w-5 mr-2" />,
-    },
-    {
-      title: "Research Collection",
-      description:
-        "Browse, organize and manage your growing library of research materials.",
-      path: "/research-collection",
-      icon: <IconNotebook className="h-5 w-5 mr-2" />,
-    },
-    {
-      title: "Analysis History",
-      description:
-        "Review your past research analyses and track your academic progress over time.",
-      path: "/history",
-      icon: <IconSearch className="h-5 w-5 mr-2" />,
-    },
-    {
-      title: "Advanced Search",
-      description:
-        "Perform complex searches across your research materials and external databases.",
-      path: "/search",
-      icon: <IconDatabase className="h-5 w-5 mr-2" />,
-    },
-    {
-      title: "Settings",
-      description:
-        "Customize your research environment and manage your account preferences.",
-      path: "/settings",
-      icon: <IconCode className="h-5 w-5 mr-2" />,
-    },
-  ];
-
   return (
     <SearchContext.Provider
       value={{ papers, loading, error, query, setQuery, handleSearch }}
     >
-      <div className="main-gradient-bg min-h-screen overflow-y-auto">
+      <div className="light-gradient-bg home-container">
         <FloatingShapes />
-        <div className="content-overlay container px-4 max-w-7xl mx-auto">
-          {/* Header Section with Search Bar */}
-          <header className="pt-6 pb-4 sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container px-4 max-w-7xl mx-auto py-8">
+          <header className="home-header">
             <motion.div
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2, duration: 0.5 }}
-              className="search-container premium-glass p-4 rounded-lg flex items-center shadow-md border border-white/10 backdrop-blur-sm"
+              transition={{ delay: 0.1, duration: 0.5 }}
             >
-              <IconSearch className="h-5 w-5 mr-2 text-white/70" />
-              <Input
-                type="search"
-                placeholder="Search for relevant and popular research papers..."
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                className="flex-grow bg-transparent text-white placeholder:text-white/50"
-              />
-              {query && (
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="rounded-full h-8 w-8 text-white/70 hover:text-white"
-                  onClick={() => setQuery("")}
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                    className="h-4 w-4"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </Button>
-              )}
-              <Button className="ml-2 rounded-full" onClick={handleSearch}>
-                Search
-              </Button>
+              <h1 className="home-title">PRATYAKSHA</h1>
+              <p className="home-subtitle">
+                Your intelligent research companion for academic papers and document analysis
+              </p>
             </motion.div>
           </header>
 
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2, duration: 0.5 }}
+            className="search-section"
+          >
+            <div className="home-search-container">
+              <Input
+                type="search"
+                placeholder="Search for academic papers..."
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                className="home-search-input"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handleSearch();
+                  }
+                }}
+              />
+              <button className="home-search-button" onClick={handleSearch}>
+                <IconSearch size={18} />
+                Search
+              </button>
+            </div>
+          </motion.div>
+
           {/* Search Results Section */}
-          <div className="search-results-section mt-6">
+          <div className="papers-section">
             {loading ? (
               <div className="loading-container py-12">
-                <div className="loader-wrapper">
-                  <div className="paper-loader">
-                    <div className="loader-circle"></div>
-                    <div className="paper-sheets">
-                      <div className="paper-sheet sheet1"></div>
-                      <div className="paper-sheet sheet2"></div>
-                      <div className="paper-sheet sheet3"></div>
-                    </div>
-                  </div>
-                  <Text className="loading-text">Finding papers...</Text>
-                </div>
+                <Loader color="indigo" size="lg" />
+                <Text className="mt-4 text-slate-600">Finding papers...</Text>
               </div>
             ) : error ? (
-              <Text c="red" ta="center" className="error-message">
-                {error}
-              </Text>
-            ) : papers.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {papers.map((paper) => (
-                  <ShadcnCard key={paper.id} className="paper-card hover:shadow-lg transition-shadow">
-                    <CardHeader>
-                      <CardTitle className="text-lg font-semibold line-clamp-2">
-                        {paper.title}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <Text size="sm" className="text-muted-foreground mb-2">
-                        {paper.abstract || "No abstract available"}
-                      </Text>
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        {paper.categories?.map((category, index) => (
-                          <ShadcnBadge key={index} variant="secondary">
-                            {category}
-                          </ShadcnBadge>
-                        ))}
-                      </div>
-                    </CardContent>
-                    <CardFooter className="flex justify-between">
-                      <Text size="sm" className="text-muted-foreground">
-                        {formatDate(paper.published_date)}
-                      </Text>
-                      <div className="flex gap-2">
-                        {paper.url_pdf && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => window.open(paper.url_pdf, '_blank')}
-                          >
-                            <IconDownload className="h-4 w-4 mr-1" />
-                            PDF
-                          </Button>
-                        )}
-                        {paper.url_abs && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => window.open(paper.url_abs, '_blank')}
-                          >
-                            <IconExternalLink className="h-4 w-4 mr-1" />
-                            Abstract
-                          </Button>
-                        )}
-                      </div>
-                    </CardFooter>
-                  </ShadcnCard>
-                ))}
+              <div className="empty-state">
+                <Text className="empty-state-title">Error</Text>
+                <Text className="empty-state-text">{error}</Text>
               </div>
+            ) : papers.length > 0 ? (
+              <>
+                <h2 className="section-title">Recent Papers</h2>
+                <div className="papers-grid">
+                  {papers.map((paper) => (
+                    <div key={paper.id} className="paper-card">
+                      <div className="paper-card-header">
+                        <h3 className="paper-title">{paper.title}</h3>
+                      </div>
+                      <div className="paper-card-content">
+                        <p className="paper-abstract">{paper.abstract}</p>
+                      </div>
+                      <div className="paper-card-footer">
+                        <span className="paper-date">
+                          {formatDate(paper.published_date)}
+                        </span>
+                        <a
+                          href="#"
+                          className="paper-link"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            handleOpenPreview(paper);
+                          }}
+                        >
+                          View Details
+                          <IconChevronRight size={16} />
+                        </a>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
             ) : (
-              <Text ta="center" c="dimmed" className="no-results">
-                {query ? `No results found for "${query}"` : "No papers available"}
-              </Text>
+              <div className="empty-state">
+                <Text className="empty-state-title">No papers found</Text>
+                <Text className="empty-state-text">
+                  Try searching for a topic or check out our trending papers below
+                </Text>
+              </div>
             )}
           </div>
 
-          {/* Main Content with Feature Cards */}
-          <main className="pb-12">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="space-y-8"
-            >
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {featurePages.map((page, index) => (
-                  <motion.div
-                    key={index}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1, duration: 0.5 }}
-                  >
-                    <ShadcnCard className="premium-glass border-white/10 shadow-lg hover:shadow-xl transition-all duration-300 hover:border-primary/30 group">
-                      <CardHeader>
-                        <div className="flex justify-between gap-4">
-                          <div>
-                            <CardTitle className="text-xl mb-2 text-white group-hover:text-primary/90 transition-colors">
-                              {page.title}
-                            </CardTitle>
-                            <div className="flex flex-wrap gap-2">
-                              <ShadcnBadge
-                                variant="outline"
-                                className="text-white/80 border-white/20"
-                              >
-                                Feature
-                              </ShadcnBadge>
-                            </div>
-                          </div>
-                          <div className="shrink-0 w-10 h-10 flex items-center justify-center relative bg-white/5 rounded-md overflow-hidden border border-white/10">
-                            {page.icon}
-                          </div>
-                        </div>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-white/70 line-clamp-3 text-sm">
-                          {page.description}
-                        </p>
-                      </CardContent>
-                      <CardFooter className="flex flex-wrap gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="border-white/20 text-white hover:bg-white/10"
-                          asChild
-                        >
-                          <Link to={page.path}>
-                            {page.title}
-                          </Link>
-                        </Button>
-                      </CardFooter>
-                    </ShadcnCard>
-                  </motion.div>
-                ))}
+          {/* Features Section */}
+          <div className="features-section">
+            <h2 className="section-title">Features</h2>
+            <div className="features-grid">
+              <div className="feature-card">
+                <div className="feature-card-header">
+                  <h3 className="feature-card-title">
+                    <IconFileText size={20} />
+                    Upload PDF
+                  </h3>
+                </div>
+                <div className="feature-card-content">
+                  <p className="feature-card-description">
+                    Upload and analyze research papers, articles, and other academic documents.
+                  </p>
+                </div>
+                <div className="feature-card-footer">
+                  <Link to="/upload">
+                    <Button variant="outline" className="secondary-button">
+                      Upload
+                      <IconChevronRight size={16} />
+                    </Button>
+                  </Link>
+                </div>
               </div>
-            </motion.div>
-          </main>
-
-          {/* Modal */}
-          <Modal
-            opened={previewOpen}
-            onClose={handleClosePreview}
-            title={
-              <Title order={4} className="pr-8 text-white">
-                {previewPaper?.title}
-              </Title>
-            }
-            size="lg"
-            centered
-            radius="lg"
-            classNames={{
-              header: "p-4 border-b border-white/10 bg-card",
-              title: "font-medium",
-              body: "bg-card",
-            }}
-            styles={{
-              content: {
-                background: "rgba(30, 41, 59, 0.95)",
-                backdropFilter: "blur(16px)",
-              },
-            }}
-          >
-            {previewPaper && (
-              <div>
-                <Tabs defaultValue="abstract">
-                  <Tabs.List className="bg-white/5 px-4">
-                    <Tabs.Tab value="abstract">Abstract</Tabs.Tab>
-                    {previewPaper.url_pdf && (
-                      <Tabs.Tab value="pdf">PDF Preview</Tabs.Tab>
-                    )}
-                  </Tabs.List>
-
-                  <Tabs.Panel value="abstract" pt="xs">
-                    <div className="p-4">
-                      <Text size="sm" className="text-white/80">
-                        {previewPaper.abstract}
-                      </Text>
-                      {previewPaper.arxiv_id && (
-                        <Group mt="sm">
-                          <Badge radius="md" color="blue">
-                            arXiv: {previewPaper.arxiv_id}
-                          </Badge>
-                          <Badge color="gray" radius="md">
-                            Published: {formatDate(previewPaper.published_date)}
-                          </Badge>
-                        </Group>
-                      )}
-                      <Group mt="lg" justify="flex-end">
-                        {previewPaper.url_pdf && (
-                          <MantineButton
-                            component="a"
-                            href={previewPaper.url_pdf}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            leftSection={<IconDownload size={16} />}
-                            color="blue"
-                            radius="md"
-                          >
-                            Download PDF
-                          </MantineButton>
-                        )}
-                      </Group>
-                    </div>
-                  </Tabs.Panel>
-
-                  {previewPaper.url_pdf && (
-                    <Tabs.Panel value="pdf" pt="xs">
-                      <iframe
-                        src={previewPaper.url_pdf}
-                        width="100%"
-                        height="500px"
-                        style={{
-                          border: "1px solid var(--border)",
-                          borderRadius: "4px",
-                        }}
-                        title={`PDF Preview of ${previewPaper.title}`}
-                      />
-                    </Tabs.Panel>
-                  )}
-                </Tabs>
+              
+              <div className="feature-card">
+                <div className="feature-card-header">
+                  <h3 className="feature-card-title">
+                    <IconBrain size={20} />
+                    Analysis History
+                  </h3>
+                </div>
+                <div className="feature-card-content">
+                  <p className="feature-card-description">
+                    Review your past research analyses and track your academic progress over time.
+                  </p>
+                </div>
+                <div className="feature-card-footer">
+                  <Link to="/history">
+                    <Button variant="outline" className="secondary-button">
+                      View History
+                      <IconChevronRight size={16} />
+                    </Button>
+                  </Link>
+                </div>
               </div>
-            )}
-          </Modal>
+              
+              <div className="feature-card">
+                <div className="feature-card-header">
+                  <h3 className="feature-card-title">
+                    <IconSearch size={20} />
+                    Advanced Search
+                  </h3>
+                </div>
+                <div className="feature-card-content">
+                  <p className="feature-card-description">
+                    Perform complex searches across your research materials and external databases.
+                  </p>
+                </div>
+                <div className="feature-card-footer">
+                  <Link to="/search">
+                    <Button variant="outline" className="secondary-button">
+                      Search
+                      <IconChevronRight size={16} />
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+
         </div>
+
+        {/* Paper Preview Modal */}
+        <Modal
+          opened={previewOpen}
+          onClose={handleClosePreview}
+          title=""
+          size="lg"
+          centered
+          classNames={{
+            root: "preview-modal",
+            header: "preview-header",
+            title: "preview-title",
+            body: "preview-content",
+          }}
+        >
+          {previewPaper && (
+            <>
+              <div className="preview-header">
+                <h2 className="preview-title">{previewPaper.title}</h2>
+              </div>
+              <div className="preview-content">
+                <p className="preview-abstract">{previewPaper.abstract}</p>
+                <div>
+                  <Text size="sm" mb={2}>
+                    <b>Published:</b> {formatDate(previewPaper.published_date)}
+                  </Text>
+                  {previewPaper.categories && previewPaper.categories.length > 0 && (
+                    <div className="mt-3">
+                      <Text size="sm" mb={1}>
+                        <b>Categories:</b>
+                      </Text>
+                      <div className="flex flex-wrap gap-2 mt-1">
+                        {previewPaper.categories.map((cat: string, i: number) => (
+                          <ShadcnBadge key={i} variant="outline" className="status-badge">
+                            {cat}
+                          </ShadcnBadge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="preview-footer">
+                <button className="preview-close-button" onClick={handleClosePreview}>
+                  Close
+                </button>
+                {previewPaper.url_pdf && (
+                  <a
+                    href={previewPaper.url_pdf}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="preview-download-button"
+                  >
+                    <IconDownload size={16} />
+                    Download PDF
+                  </a>
+                )}
+              </div>
+            </>
+          )}
+        </Modal>
       </div>
     </SearchContext.Provider>
   );

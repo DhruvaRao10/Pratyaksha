@@ -49,22 +49,42 @@ button.bg-primary:hover {
   border-color: rgba(var(--primary-rgb), 0.5);
 }
 
-/* Added navigation menu styling */
+
 .nav-container {
   display: flex;
   align-items: center;
+  height: 100%;
 }
 
 .navbar-menu {
-  width: auto !important;
+  width: 100% !important;
   max-width: none !important;
-  flex: 0 1 auto !important;
-  justify-content: flex-end !important;
+  height: 100%;
 }
 
 .navbar-list {
   display: flex !important;
   flex-direction: row !important;
-  justify-content: flex-end !important;
+  height: 100%;
+  align-items: center !important;
   gap: 8px !important;
+}
+
+.logo-container {
+  display: flex;
+  align-items: center;
+  margin-top: 8px;      
+  margin-right: 32px;   
+  gap: 1rem;
+}
+
+.logo-text {
+  color: #373333;     
+  font-size: 1rem;    
+  font-weight: 800;     
+  letter-spacing: 0.05em;
+  padding-right: 1.5rem; 
+  position: relative;
+  top: 32px;  
+
 }
