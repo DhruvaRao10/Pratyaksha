@@ -1,9 +1,8 @@
 /node_modules
-/venv
-/__pycache__/
+/__pycache__
 .env
+/venv
 intuitnote-2342a-firebase-adminsdk-ia7wu-e8ccda4780.json
-*.py[cod]
-*$py.class
-*.so
-.Python
+*.pyc
+__pycache__/
+
