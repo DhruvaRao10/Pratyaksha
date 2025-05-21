@@ -3,13 +3,28 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Container, TextInput, PasswordInput, Button, Title, Text, Paper, Divider, Group } from "@mantine/core";
-import { notifications } from "@mantine/notifications";
-import { IconAt, IconLock, IconBrandGoogle } from "@tabler/icons-react";
+import { useTheme } from "next-themes";
+import { Button } from "../ui/button";
+import { Input } from "../ui/input";
+import { Label } from "../ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "../ui/card";
+import { FaSun, FaMoon } from "react-icons/fa";
+import GoogleIcon from "@mui/icons-material/Google";
+import FloatingShapes from "../components/FloatingShapes";
+import { ToastContainer, toast } from "react-toastify";
+
+import "../styles/auth.css";
 import axiosClient from "../services/axiosInstance";
 import { getAuth, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
 import { initializeApp } from "firebase/app";
-import * as validator from 'email-validator';
+import * as validator from "email-validator";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBO6hVXLPNSv7_6UHu_3_z4Q18JIPXwEIE",
@@ -18,7 +33,7 @@ const firebaseConfig = {
   storageBucket: "intuitnote-2342a.firebasestorage.app",
   messagingSenderId: "530910917968",
   appId: "1:530910917968:web:05e9209338d22cd198a855",
-  measurementId: "G-R4ML705ZJ7"
+  measurementId: "G-R4ML705ZJ7",
 };
 
 const app = initializeApp(firebaseConfig);
@@ -27,6 +42,7 @@ const googleProvider = new GoogleAuthProvider();
 
 export default function SignIn() {
   const navigate = useNavigate();
+  const { theme, setTheme } = useTheme();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -65,20 +81,15 @@ export default function SignIn() {
       const { data } = await axiosClient.post("/login", { email, password });
       localStorage.setItem("access_token", data.access_token);
       localStorage.setItem("refresh_token", data.refresh_token);
-      
-      notifications.show({
-        title: "Success",
-        message: "Welcome back! You've been logged in successfully.",
-        color: "green"
-      });
-      
-      navigate("/");
+
+      toast.success("Welcome back! You've been logged in successfully.");
+
+      navigate("/home");
     } catch (error) {
-      notifications.show({
-        title: "Error",
-        message: error.response?.data?.detail || "Login failed. Please check your credentials.",
-        color: "red"
-      });
+      toast.error(
+        error.response?.data?.detail ||
+        "Login failed. Please check your credentials."
+      );
       console.error("Login failed", error);
     } finally {
       setLoading(false);
@@ -90,24 +101,18 @@ export default function SignIn() {
     try {
       const result = await signInWithPopup(auth, googleProvider);
       const firebaseToken = await result.user.getIdToken();
-      const { data } = await axiosClient.post("/login/google", { firebase_token: firebaseToken });
-      
+      const { data } = await axiosClient.post("/login/google", {
+        firebase_token: firebaseToken,
+      });
+
       localStorage.setItem("access_token", data.access_token);
       localStorage.setItem("refresh_token", data.refresh_token);
-      
-      notifications.show({
-        title: "Success",
-        message: "Successfully signed in with Google",
-        color: "green"
-      });
-      
+
+      toast.success("logged in using google successfully!");
+
       navigate("/");
     } catch (error) {
-      notifications.show({
-        title: "Error",
-        message: "Google sign-in failed. Please try again.",
-        color: "red"
-      });
+      toast.error("Google sign-in failed. Please try again.");
       console.error("Google sign-in failed", error);
     } finally {
       setLoading(false);
@@ -115,82 +120,100 @@ export default function SignIn() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      {/* Animated background shapes */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="floating-shape bg-purple-500/5 w-96 h-96 rounded-full absolute -top-48 -right-48 blur-3xl"></div>
-        <div className="floating-shape-delayed bg-blue-500/5 w-96 h-96 rounded-full absolute -bottom-48 -left-48 blur-3xl"></div>
-      </div>
+    <div className="light-gradient-bg auth-container">
+      <FloatingShapes />
       
-      <Container size={420} py={40}>
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <Title order={1} align="center" className="bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent mb-2">
-            Welcome Back
-          </Title>
-          <Text c="dimmed" size="sm" align="center" mb={30}>
-            Sign in to your Notes App account
-          </Text>
+      <Button
+        variant="outline"
+        size="icon"
+        className="theme-toggle"
+        onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+      >
+        {theme === "dark" ? <FaMoon /> : <FaSun />}
+      </Button>
 
-          <Paper withBorder shadow="md" p={30} radius="md" className="bg-white/80 backdrop-blur-lg">
-            <TextInput
-              label="Email"
-              placeholder="you@example.com"
-              icon={<IconAt size={16} />}
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              error={emailError}
-              required
-              mb="md"
-            />
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="px-4 w-full max-w-md"
+      >
+        <Card className="auth-card">
+          <CardHeader className="auth-header">
+            <CardTitle className="auth-title">Welcome to Pratyaksha</CardTitle>
+            <CardDescription className="auth-description">
+              Sign in to your account
+            </CardDescription>
+          </CardHeader>
+          
+          <CardContent className="auth-content">
+            <div className="auth-input-group">
+              <Label htmlFor="email" className="auth-label">
+                Email
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className={emailError ? "auth-input error" : "auth-input"}
+              />
+              {emailError && (
+                <p className="auth-error-message">{emailError}</p>
+              )}
+            </div>
             
-            <PasswordInput
-              label="Password"
-              placeholder="Your password"
-              icon={<IconLock size={16} />}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              error={passwordError}
-              required
-              mb="md"
-            />
-
+            <div className="auth-input-group">
+              <Label htmlFor="password" className="auth-label">
+                Password
+              </Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="Your password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className={passwordError ? "auth-input error" : "auth-input"}
+              />
+              {passwordError && (
+                <p className="auth-error-message">{passwordError}</p>
+              )}
+            </div>
+            
             <Button
-              fullWidth
-              loading={loading}
+              className="auth-button"
               onClick={handleLogin}
-              className="bg-gradient-to-r from-violet-600 to-purple-600"
-              mt="xl"
+              disabled={loading}
             >
-              Sign in
+              {loading ? "Signing In..." : "Sign In"}
             </Button>
-
-            <Divider label="or continue with" labelPosition="center" my="lg" />
-
-            <Group grow>
-              <Button
-                leftSection={<IconBrandGoogle size={18} />}
-                variant="default"
-                className="hover:bg-gray-100"
-                onClick={handleGoogleSignIn}
-                loading={loading}
-              >
-                Google
-              </Button>
-            </Group>
-
-            <Text align="center" mt="md">
+            
+            <div className="auth-divider">
+              <span className="auth-divider-text">Or continue with</span>
+            </div>
+            
+            <Button
+              variant="outline"
+              className="auth-social-button"
+              onClick={handleGoogleSignIn}
+              disabled={loading}
+            >
+              <GoogleIcon style={{ fontSize: 20 }} />
+              <span>Google</span>
+            </Button>
+          </CardContent>
+          
+          <CardFooter className="auth-footer">
+            <p className="auth-footer-text">
               Don't have an account?{" "}
-              <Text component={Link} to="/register" className="text-violet-600 hover:text-violet-700">
+              <Link to="/register" className="auth-link">
                 Register
-              </Text>
-            </Text>
-          </Paper>
-        </motion.div>
-      </Container>
+              </Link>
+            </p>
+          </CardFooter>
+        </Card>
+      </motion.div>
     </div>
   );
 }

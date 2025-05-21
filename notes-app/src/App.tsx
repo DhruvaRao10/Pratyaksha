@@ -1,76 +1,167 @@
 //@ts-nocheck
-import { Route, Routes, Navigate } from 'react-router-dom';
-import { MantineProvider } from '@mantine/core';
-import { Notifications } from '@mantine/notifications';
-import { HomePage } from './pages/Home';
-import { UploadPage } from './pages/Upload';
-import { YouTubePage } from './pages/YouTube';
-import { SettingsPage } from './pages/Settings';
-import Login from './components/Login';
-import Register from './components/Reg';
-import { theme } from './theme';
-import './styles/navigation.css';
+import React, { useState, useEffect } from "react";
+import { Route, Routes, Navigate, useLocation } from "react-router-dom";
+import {
+  MantineProvider,
+  localStorageColorSchemeManager,
+  useMantineColorScheme,
+} from "@mantine/core";
+import { useHotkeys } from "@mantine/hooks";
+import { HomePage } from "./pages/Home";
+import { UploadPage } from "./pages/Upload";
+import { YouTubePage } from "./pages/YouTube";
+import { SettingsPage } from "./pages/Settings";
+import { AnalysisHistoryPage } from "./pages/AnalysisHistory";
+import { SearchPage } from "./pages/Search";
+import Login from "./components/Login";
+import Register from "./components/Reg";
+import {theme} from "./theme"; 
+import { cn } from "./lib/utils";
+import { ToastContainer } from "react-toastify";
+import { AppLayout } from "./components/AppLayout";
+import { CollectionPage } from "./pages/Collection";
+import { PDFViewerPage } from "./pages/PDFviewerPage";
+import { GraphViewPage } from "./pages/GraphView";
+import "./styles/collection.css";
+import "./styles/global.css"
 
-// Auth protection helper component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  // Check if user is authenticated - simplified version for demo
-  const isAuthenticated = localStorage.getItem('access_token') !== null;
-  
+  const location = useLocation();
+  const isAuthenticated = localStorage.getItem("access_token") !== null;
   if (!isAuthenticated) {
-    // Redirect to login if not authenticated
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
-  
   return <>{children}</>;
 };
 
+const colorSchemeManager = localStorageColorSchemeManager({
+  key: "intuit-notes-color-scheme",
+});
+
+function ColorSchemeToggleHotkey() {
+  const { toggleColorScheme } = useMantineColorScheme();
+  useHotkeys([["mod+J", () => toggleColorScheme()]]);
+  return null;
+}
+
 export default function App() {
+  // Removed isNavCollapsed state
+  const [isAuthenticated, setIsAuthenticated] = useState(
+    !!localStorage.getItem("access_token")
+  );
+  const location = useLocation();
+
+  useEffect(() => {
+    const checkAuth = () => {
+      setIsAuthenticated(!!localStorage.getItem("access_token"));
+    };
+    checkAuth();
+
+    window.addEventListener("storage", checkAuth);
+
+    return () => {
+      window.removeEventListener("storage", checkAuth);
+    };
+  }, [location]);
+
   return (
-    <MantineProvider theme={theme}>
-      <Notifications position="top-right" zIndex={1000} />
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        
-        <Route 
-          path="/" 
-          element={
-            <ProtectedRoute>
-              <HomePage />
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/upload" 
-          element={
-            <ProtectedRoute>
-              <UploadPage />
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/youtube" 
-          element={
-            <ProtectedRoute>
-              <YouTubePage />
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/settings" 
-          element={
-            <ProtectedRoute>
-              <SettingsPage />
-            </ProtectedRoute>
-          } 
-        />
-        
-        {/* Catch-all route - redirect to home */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+    // Wrap with MantineProvider using your theme and color scheme manager
+    <MantineProvider theme={theme} colorSchemeManager={colorSchemeManager}>
+      <ColorSchemeToggleHotkey />
+      <ToastContainer />
+
+      {isAuthenticated && (
+          <div className="absolute top-4 right-4 z-50"> 
+          </div>
+      )}
+
+
+       <AppLayout>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+
+          <Route
+            path="/home"
+            element={
+              <ProtectedRoute>
+                <HomePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/upload"
+            element={
+              <ProtectedRoute>
+                <UploadPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/youtube-import"
+            element={
+              <ProtectedRoute>
+                <YouTubePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/history"
+            element={
+              <ProtectedRoute>
+                <AnalysisHistoryPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <ProtectedRoute>
+                <SettingsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/search"
+            element={
+              <ProtectedRoute>
+                <SearchPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/research-collection"
+            element={
+              <ProtectedRoute>
+                <CollectionPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/graph-view"
+            element={
+              <ProtectedRoute>
+                <GraphViewPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/pdf/:docId"
+            element={
+              <ProtectedRoute>
+                <PDFViewerPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="*"
+            element={
+              <Navigate to={isAuthenticated ? "/home" : "/login"} replace />
+            }
+          />
+        </Routes>
+      </AppLayout>
     </MantineProvider>
   );
-} 
+}

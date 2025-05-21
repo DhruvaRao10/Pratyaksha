@@ -1,4 +1,14 @@
-from sqlalchemy import Column, Integer, Float, String, DateTime, Boolean, ForeignKey
+from sqlalchemy import (
+    Column,
+    Integer,
+    Float,
+    String,
+    DateTime,
+    Boolean,
+    ForeignKey,
+    Text,
+    JSON,
+)
 from sqlalchemy.orm import relationship
 from database import Base
 from datetime import datetime, timezone
@@ -51,6 +61,8 @@ class PdfDocument(Base):
 
     # user = relationship("User", back_populates="pdf_documents")
 
+    related_papers = relationship("RelatedPaper", back_populates="document")
+
 
 class VideoDocument(Base):
     __tablename__ = "video_documents"
@@ -66,3 +78,35 @@ class VideoDocument(Base):
     transcript_status = Column(String(20), default="pending")
     duration = Column(Float)
     error_message = Column(String(1000))
+
+
+class History(Base):
+    __tablename__ = "notes_history"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    doc_id = Column(String(255), nullable=False)
+    file_name = Column(String(255), nullable=False)
+    s3_url = Column(String(1000))
+    analysis = Column(Text)
+    processing_status = Column(String(20), default="completed")
+    timestamp = Column(DateTime, default=datetime.now(tz=timezone.utc))
+
+
+class RelatedPaper(Base):
+    __tablename__ = "related_papers"
+
+    id = Column(Integer, primary_key=True, index=True)
+    doc_id = Column(Integer, ForeignKey("pdf_documents.id"))
+    title = Column(String(500))
+    url = Column(String(1000))
+    authors = Column(JSON)
+    publication_year = Column(String(10))
+    abstract = Column(Text)
+    categories = Column(JSON)
+    relevance_score = Column(Float)
+    created_at = Column(DateTime(timezone=True), default=datetime.now(tz=timezone.utc))
+
+    document = relationship("PdfDocument", back_populates="related_papers")
+
+
+PdfDocument.related_papers = relationship("RelatedPaper", back_populates="document")

@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { AppShell, Container, Title, Text, Paper, Switch, Divider, Group, Button, ThemeIcon, Select } from '@mantine/core';
 import { motion } from 'framer-motion';
-import { Navigation } from '../components/Navigation';
+import { MainNav } from '../components/Navigation';
 import { 
   IconPalette, 
   IconBell, 
@@ -11,7 +11,7 @@ import {
   IconUserCircle,
   IconCheck
 } from '@tabler/icons-react';
-import { notifications } from '@mantine/notifications';
+import { toast } from 'react-toastify';
 
 export function SettingsPage() {
   const [darkMode, setDarkMode] = useState(false);
@@ -20,13 +20,19 @@ export function SettingsPage() {
   const [language, setLanguage] = useState('en');
 
   const handleSaveSettings = () => {
-    notifications.show({
-      title: "Success",
-      message: "Your settings have been saved",
-      color: "green",
-      icon: <IconCheck size={16} />,
-    });
+    toast.success("Your settings have been saved");
   };
+
+  const SelectWithoutChevron = ({ children, ...props }) => (
+    <Select
+      {...props}
+      rightSection={<></>}
+    >
+      {children}
+    </Select>
+  );
+  
+
 
   return (
     <div className="min-h-screen bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-purple-50 via-white to-violet-50">
@@ -46,10 +52,7 @@ export function SettingsPage() {
         }}
         className="bg-transparent"
       >
-        <AppShell.Navbar>
-          <Navigation />
-        </AppShell.Navbar>
-        
+      
         <AppShell.Main className="content-with-sidebar transition-all duration-300">
           <Container size="md" py="xl">
             <motion.div
@@ -65,7 +68,7 @@ export function SettingsPage() {
                   Settings
                 </Title>
                 <Text c="dimmed" size="lg" className="max-w-lg mx-auto">
-                  Customize your Notes App experience
+                  Customize your Intuit Notes experience
                 </Text>
               </div>
               
@@ -104,7 +107,7 @@ export function SettingsPage() {
                       </Group>
                       <Group position="apart">
                         <Text>Language</Text>
-                        <Select
+                        <SelectWithoutChevron
                           value={language}
                           onChange={setLanguage}
                           data={[

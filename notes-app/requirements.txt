@@ -8,3 +8,7 @@ llama-index
 pymupdf
 pdfplumber
 weaviate-client
+nougat-ocr
+elasticsearch
+arxiv
+httpx
