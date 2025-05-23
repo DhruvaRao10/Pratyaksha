@@ -1,6 +1,36 @@
 version: '3.8'
 
 services:
+
+
+  fastapi:
+    build:
+      context: ./note-server     
+      dockerfile: Dockerfile    
+    ports:
+      - "8000:8000"
+    depends_on:
+      - redis
+      - weaviate_anon
+      - elasticsearch
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - AWS_BUCKET_NAME=${AWS_BUCKET_NAME}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_REGION=${AWS_REGION}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - JWT_REFRESH_SECRET_KEY=${JWT_REFRESH_SECRET_KEY}
+      - LLAMA_APIKEY=${LLAMA_APIKEY}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - OPENROUTER_BASE_URL=${OPENROUTER_BASE_URL}
+      - ELASTICSEARCH_HOST=${ELASTICSEARCH_HOST}
+      - EXA_API_KEY=${EXA_API_KEY}
+      - PAPERSWITHCODE_API_KEY=${PAPERSWITHCODE_API_KEY}
+
+    # volumes:
+    #   - ./note-server:/app     
+
   redis:
     image: redis:latest
     ports:
