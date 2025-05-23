@@ -25,7 +25,6 @@ from llama_index.core import (
     load_index_from_storage,
     Document,
 )
-from llama_index.llms.llama_api import LlamaAPI
 from llama_index.vector_stores.weaviate import WeaviateVectorStore
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.core.node_parser import TokenTextSplitter
@@ -35,7 +34,6 @@ from typing import List, Optional, Dict, Any
 import weaviate
 from weaviate.util import generate_uuid5
 from PyPDF2 import PdfReader
-from llama_index.readers.file import PyMuPDFReader
 import pymupdf
 import pymupdf4llm
 import pdfplumber
