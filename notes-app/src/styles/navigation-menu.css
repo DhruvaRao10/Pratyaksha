@@ -1,0 +1,33 @@
+/* Override shadcn's navigation menu default styles */
+[data-slot="navigation-menu"] {
+    width: auto !important;
+    justify-content: flex-end !important;
+    margin-left: auto !important;
+  }
+  
+  [data-slot="navigation-menu-list"] {
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: flex-end !important;
+    width: auto !important;
+    margin-left: auto !important;
+    list-style: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  
+  [data-slot="navigation-menu-item"] {
+    margin-right: 8px;
+    list-style: none !important;
+    padding: 0 !important;
+  }
+  
+  [data-slot="navigation-menu-viewport"] {
+    position: absolute;
+    top: 100%;
+  }
+
+  [data-slot="navigation-menu-item"]::before,
+  [data-slot="navigation-menu-item"]::after {
+    display: none !important;
+  }

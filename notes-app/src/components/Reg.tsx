@@ -3,13 +3,20 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Container, TextInput, PasswordInput, Button, Title, Text, Paper, Group } from "@mantine/core";
-import { notifications } from "@mantine/notifications";
-import { IconUser, IconAt, IconLock, IconEye, IconEyeOff } from "@tabler/icons-react";
+import { useTheme } from "next-themes";
+import { Button } from "../ui/button";
+import { Input } from "../ui/input";
+import { Label } from "../ui/label";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../ui/card";
+import { FaSun, FaMoon } from "react-icons/fa";
+import FloatingShapes from "../components/FloatingShapes";
+import { toast } from "react-toastify";
 import axiosClient from "../services/axiosInstance";
+import "../styles/auth.css";
 
 const Register = () => {
     const navigate = useNavigate();
+    const { theme, setTheme } = useTheme();
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -68,20 +75,12 @@ const Register = () => {
                 }
             });
             
-            notifications.show({
-                title: "Success",
-                message: "Your account has been created successfully!",
-                color: "green"
-            });
+            toast.success("Your account has been created successfully!");
             
             console.log("Registration successful", response.data);
             navigate("/login");
         } catch (error) {
-            notifications.show({
-                title: "Error",
-                message: error.response?.data?.detail || "Registration failed. Please try again.",
-                color: "red"
-            });
+            toast.error(error.response?.data?.detail || "Registration failed. Please try again.");
             console.error("Registration error:", error.response?.data);
         } finally {
             setLoading(false);
@@ -89,82 +88,91 @@ const Register = () => {
     };
                 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-            {/* Animated background shapes */}
-            <div className="absolute inset-0 overflow-hidden">
-                <div className="floating-shape bg-purple-500/5 w-96 h-96 rounded-full absolute -top-48 -right-48 blur-3xl"></div>
-                <div className="floating-shape-delayed bg-blue-500/5 w-96 h-96 rounded-full absolute -bottom-48 -left-48 blur-3xl"></div>
-            </div>
+        <div className="light-gradient-bg auth-container">
+            <FloatingShapes />
             
-            <Container size={420} py={40}>
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5 }}
-                >
-                    <Title order={1} align="center" className="bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent mb-2">
-                        Create Account
-                    </Title>
-                    <Text c="dimmed" size="sm" align="center" mb={30}>
-                        Join Notes App and start organizing your thoughts
-                    </Text>
+            <Button
+                variant="outline"
+                size="icon"
+                className="theme-toggle"
+                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            >
+                {theme === "dark" ? <FaMoon /> : <FaSun />}
+            </Button>
 
-                    <Paper withBorder shadow="md" p={30} radius="md" className="bg-white/80 backdrop-blur-lg">
-                        <TextInput
-                            label="Username"
-                            placeholder="Your username"
-                            icon={<IconUser size={16} />}
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                            error={nameError}
-                            required
-                            mb="md"
-                        />
-                        
-                        <TextInput
-                            label="Email"
-                            placeholder="you@example.com"
-                            icon={<IconAt size={16} />}
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            error={emailError}
-                            required
-                            mb="md"
-                        />
-                        
-                        <PasswordInput
-                            label="Password"
-                            placeholder="Create a password"
-                            icon={<IconLock size={16} />}
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            error={passwordError}
-                            required
-                            mb="md"
-                            visibilityToggleIcon={({ reveal, size }) =>
-                                reveal ? <IconEyeOff size={size} /> : <IconEye size={size} />
-                            }
-                        />
-
-                        <Button
-                            fullWidth
-                            loading={loading}
-                            onClick={handleRegister}
-                            className="bg-gradient-to-r from-violet-600 to-purple-600"
-                            mt="xl"
-                        >
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                className="px-4 w-full max-w-md"
+            >
+                <Card className="auth-card">
+                    <CardHeader className="auth-header">
+                        <CardTitle className="auth-title">
                             Create Account
+                        </CardTitle>
+                        <CardDescription className="auth-description">
+                            Join Pratyaksha and start organizing your research
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="auth-content">
+                        <div className="auth-input-group">
+                            <Label htmlFor="username" className="auth-label">Username</Label>
+                            <Input
+                                id="username"
+                                type="text"
+                                placeholder="Your username"
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
+                                className={nameError ? "auth-input error" : "auth-input"}
+                            />
+                            {nameError && <p className="auth-error-message">{nameError}</p>}
+                        </div>
+                        <div className="auth-input-group">
+                            <Label htmlFor="email" className="auth-label">Email</Label>
+                            <Input
+                                id="email"
+                                type="email"
+                                placeholder="you@example.com"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                className={emailError ? "auth-input error" : "auth-input"}
+                            />
+                            {emailError && <p className="auth-error-message">{emailError}</p>}
+                        </div>
+                        <div className="auth-input-group">
+                            <Label htmlFor="password" className="auth-label">Password</Label>
+                            <Input
+                                id="password"
+                                type="password"
+                                placeholder="Create a password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                className={passwordError ? "auth-input error" : "auth-input"}
+                            />
+                            {passwordError && <p className="auth-error-message">{passwordError}</p>}
+                        </div>
+                        <Button
+                            className="auth-button"
+                            onClick={handleRegister}
+                            disabled={loading}
+                        >
+                            {loading ? "Creating Account..." : "Create Account"}
                         </Button>
-
-                        <Text align="center" mt="md">
+                    </CardContent>
+                    <CardFooter className="auth-footer">
+                        <p className="auth-footer-text">
                             Already have an account?{" "}
-                            <Text component={Link} to="/login" className="text-violet-600 hover:text-violet-700">
+                            <Link
+                                to="/login"
+                                className="auth-link"
+                            >
                                 Sign in
-                            </Text>
-                        </Text>
-                    </Paper>
-                </motion.div>
-            </Container>
+                            </Link>
+                        </p>
+                    </CardFooter>
+                </Card>
+            </motion.div>
         </div>
     );
 };

@@ -1,107 +1,195 @@
-import { createTheme, rgba } from '@mantine/core';
+//@ts-nocheck
+import { createTheme, type MantineColorsTuple, type MantineThemeOverride } from '@mantine/core';
 
-export const theme = createTheme({
-  primaryColor: 'violet',
+// Vibrant and bold color palette
+const indigoColor: MantineColorsTuple = [
+  '#eef2ff',
+  '#e0e7ff',
+  '#c7d2fe',
+  '#a5b4fc',
+  '#818cf8',
+  '#6366f1',
+  '#4f46e5',
+  '#4338ca',
+  '#3730a3',
+  '#312e81',
+];
+
+const emeraldColor: MantineColorsTuple = [
+  '#ecfdf5',
+  '#d1fae5',
+  '#a7f3d0',
+  '#6ee7b7',
+  '#34d399',
+  '#10b981',
+  '#059669',
+  '#047857',
+  '#065f46',
+  '#064e3b',
+];
+
+const amberColor: MantineColorsTuple = [
+  '#fffbeb',
+  '#fef3c7',
+  '#fde68a',
+  '#fcd34d',
+  '#fbbf24',
+  '#f59e0b',
+  '#d97706',
+  '#b45309',
+  '#92400e',
+  '#78350f',
+];
+
+export const theme: MantineThemeOverride = createTheme({
+  primaryColor: 'indigo',
+  primaryShade: { light: 5, dark: 6 },
+
   colors: {
-    violet: [
-      '#f5f0ff', // 0
-      '#ede0ff', // 1
-      '#dcc1ff', // 2
-      '#c7a2fe', // 3
-      '#b183fd', // 4
-      '#9b65fb', // 5
-      '#8547fa', // 6
-      '#6e38d8', // 7
-      '#5b2bb6', // 8
-      '#481e95', // 9
-    ],
-    purple: [
-      '#f3e8ff', // 0
-      '#e9d5ff', // 1
-      '#d8b4fe', // 2
-      '#c084fc', // 3
-      '#a855f7', // 4
-      '#9333ea', // 5
-      '#7e22ce', // 6
-      '#6b21a8', // 7
-      '#581c87', // 8
-      '#4c1d95', // 9
-    ],
-    pink: [
-      '#fdf2f8', // 0
-      '#fce7f3', // 1
-      '#fbcfe8', // 2
-      '#f9a8d4', // 3
-      '#f472b6', // 4
-      '#ec4899', // 5
-      '#db2777', // 6
-      '#be185d', // 7
-      '#9d174d', // 8
-      '#831843', // 9
-    ],
+    indigo: indigoColor,
+    emerald: emeraldColor,
+    amber: amberColor,
   },
-  fontFamily: 'Inter, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',
-  defaultRadius: 'md',
-  radius: {
-    xs: '4px',
-    sm: '8px',
-    md: '12px',
-    lg: '16px',
-    xl: '24px',
+
+  fontFamily: "'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+  defaultRadius: 'xl',
+
+  defaultProps: {
+    bg: 'gray.1',
   },
-  shadows: {
-    xs: '0 1px 2px rgba(0,0,0,0.05)',
-    sm: '0 1px 3px rgba(0,0,0,0.1)',
-    md: '0 4px 6px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.05)',
-    lg: '0 10px 15px rgba(0,0,0,0.07), 0 4px 6px rgba(0,0,0,0.05)',
-    xl: '0 20px 25px rgba(0,0,0,0.07), 0 8px 10px rgba(0,0,0,0.05)',
-  },
+
   components: {
     Button: {
       defaultProps: {
-        radius: 'md',
+        variant: 'gradient',
+        gradient: { from: 'indigo', to: 'emerald', deg: 45 },
+        radius: 'xl',
       },
-      styles: {
+      styles: () => ({
         root: {
-          fontWeight: 500,
-          transition: 'all 0.2s ease',
+          fontWeight: 700,
+          padding: '10px 20px',
+          transition: 'transform 0.2s ease, box-shadow 0.2s ease',
           '&:hover': {
-            transform: 'translateY(-2px)',
+            transform: 'translateY(-3px)',
+            boxShadow: '0 6px 12px rgba(0, 0, 0, 0.15)',
+          },
+          '&:active': {
+            transform: 'translateY(1px)',
           },
         },
+      }),
+    },
+
+    Card: {
+      defaultProps: {
+        shadow: 'md',
+        radius: 'xl',
+        withBorder: false,
+        bg: 'white',
+      },
+      styles: () => ({
+        root: {
+          transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+          '&:hover': {
+            transform: 'translateY(-5px)',
+            boxShadow: '0 8px 16px rgba(0, 0, 0, 0.1)',
+          },
+        },
+      }),
+    },
+
+    Paper: {
+      defaultProps: {
+        shadow: 'sm',
+        radius: 'xl',
+        bg: 'white',
+        p: 'lg',
       },
     },
+
     TextInput: {
       defaultProps: {
         radius: 'md',
       },
+      styles: () => ({
+        input: {
+          borderColor: indigoColor[4],
+          '&:focus': {
+            borderColor: indigoColor[6],
+            boxShadow: `0 0 0 3px ${indigoColor[2]}`,
+          },
+        },
+        label: {
+          fontWeight: 600,
+          color: indigoColor[7],
+        },
+      }),
     },
-    PasswordInput: {
+
+    AppShell: {
+      styles: () => ({
+        main: {
+          backgroundColor: '#f9fafb',
+          transition: 'background-color 0.3s ease',
+        },
+        navbar: {
+          backgroundColor: '#ffffff',
+          borderRight: '1px solid #e5e7eb',
+          boxShadow: '2px 0 10px rgba(0, 0, 0, 0.05)',
+        },
+      }),
+    },
+
+    Title: {
+      styles: () => ({
+        root: {
+          fontWeight: 800,
+          color: indigoColor[8],
+          letterSpacing: '-0.02em',
+        },
+      }),
+    },
+
+    Badge: {
       defaultProps: {
+        variant: 'gradient',
+        gradient: { from: 'amber', to: 'emerald', deg: 90 },
         radius: 'md',
       },
-    },
-    Card: {
-      defaultProps: {
-        radius: 'lg',
-        p: 'lg',
-      },
-      styles: {
+      styles: () => ({
         root: {
-          transition: 'all 0.3s ease',
+          fontWeight: 600,
+          textTransform: 'none',
         },
-      },
-    },
-    Paper: {
-      defaultProps: {
-        radius: 'lg',
-        p: 'lg',
-      },
-      styles: {
-        root: {
-          transition: 'all 0.3s ease',
-        },
-      },
+      }),
     },
   },
-}); 
+
+  shadows: {
+    xs: '0 4px 8px rgba(0,0,0,0.1)',
+    sm: '0 6px 12px rgba(0,0,0,0.12)',
+    md: '0 10px 20px rgba(0,0,0,0.15)',
+    lg: '0 14px 28px rgba(0,0,0,0.18)',
+    xl: '0 20px 40px rgba(0,0,0,0.2)',
+  },
+
+  headings: {
+    fontFamily: "'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+    fontWeight: 800,
+    sizes: {
+      h1: { fontSize: '3rem', lineHeight: '1.1' },
+      h2: { fontSize: '2.25rem', lineHeight: '1.2' },
+      h3: { fontSize: '1.75rem', lineHeight: '1.3' },
+      h4: { fontSize: '1.5rem', lineHeight: '1.4' },
+      h5: { fontSize: '1.25rem', lineHeight: '1.5' },
+      h6: { fontSize: '1rem', lineHeight: '1.5' },
+    },
+  },
+});
+
+// ThemeProps for styled-components
+export interface ThemeProps {
+  background: string;
+  text: string;
+}

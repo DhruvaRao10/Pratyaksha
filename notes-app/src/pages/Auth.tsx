@@ -15,7 +15,7 @@ import {
   rem,
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
-import { notifications } from '@mantine/notifications';
+import { toast } from 'react-toastify';
 import { IconBrandGoogle } from '@tabler/icons-react';
 import { Card, Metric, ProgressBar } from '@tremor/react';
 import { motion } from 'framer-motion';
@@ -51,17 +51,9 @@ export function AuthPage() {
     try {
       const endpoint = type === 'login' ? '/login' : '/register';
       // Your existing authentication logic here
-      notifications.show({
-        title: 'Success',
-        message: type === 'login' ? 'Logged in successfully' : 'Account created successfully',
-        color: 'green',
-      });
+      toast.success(type === 'login' ? 'Logged in successfully' : 'Account created successfully');
     } catch (error) {
-      notifications.show({
-        title: 'Error',
-        message: 'An error occurred',
-        color: 'red',
-      });
+      toast.error('An error occurred');
     } finally {
       setLoading(false);
     }
@@ -75,7 +67,7 @@ export function AuthPage() {
     >
       <Container size={420} my={40}>
         <Title ta="center" className="bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">
-          Welcome to Notes App
+          Welcome to Intuit Notes
         </Title>
         <Text c="dimmed" size="sm" ta="center" mt={5}>
           {type === 'login' ? "Don't have an account? " : 'Already have an account? '}

@@ -1,7 +1,47 @@
 version: '3.8'
 
 services:
+
+
+  fastapi:
+    build:
+      context: ./note-server     
+      dockerfile: Dockerfile    
+    ports:
+      - "8000:8000"
+    depends_on:
+      - redis
+      - weaviate_anon
+      - elasticsearch
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - AWS_BUCKET_NAME=${AWS_BUCKET_NAME}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_REGION=${AWS_REGION}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - JWT_REFRESH_SECRET_KEY=${JWT_REFRESH_SECRET_KEY}
+      - LLAMA_APIKEY=${LLAMA_APIKEY}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - OPENROUTER_BASE_URL=${OPENROUTER_BASE_URL}
+      - ELASTICSEARCH_HOST=${ELASTICSEARCH_HOST}
+      - EXA_API_KEY=${EXA_API_KEY}
+      - PAPERSWITHCODE_API_KEY=${PAPERSWITHCODE_API_KEY}
+
+    # volumes:
+    #   - ./note-server:/app     
+
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    restart: unless-stopped
+
   weaviate_anon:
+    image: cr.weaviate.io/semitechnologies/weaviate:1.27.2
     command:
       - --host
       - 0.0.0.0
@@ -9,22 +49,51 @@ services:
       - '5000'
       - --scheme
       - http
-    image: cr.weaviate.io/semitechnologies/weaviate:1.27.2
     ports:
-      - 5000:5000
-      - 50051:50051
+      - "5000:5000"
+      - "50051:50051"
     restart: on-failure:0
     environment:
-      LLAMA_APIKEY: LA-adda57987e544443af4b40fcbd5fadd4911a0a69f5df40e7b4be853bb943fbcf
-      # COHERE_APIKEY: 
-      # HUGGINGFACE_APIKEY: $HUGGINGFACE_APIKEY  # For Hugging Face models (if used)
+      LLAMA_APIKEY: ${LLAMA_APIKEY}
+      # COHERE_APIKEY:
+      # HUGGINGFACE_APIKEY: ${HUGGINGFACE_APIKEY}
       QUERY_DEFAULTS_LIMIT: 25
       AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: 'true'
       AUTHENTICATION__OIDC__ENABLED: 'false'
-      # AUTHENTICATION_APIKEY_ENABLED: 'true'   
-      # AUTHENTICATION_APIKEY_ALLOWED_KEYS: 'your-api-key'  
       PERSISTENCE_DATA_PATH: '/var/lib/weaviate'
       DEFAULT_VECTORIZER_MODULE: 'none'
       ENABLE_MODULES: 'text2vec-cohere,text2vec-huggingface,text2vec-openai,generative-openai,generative-cohere'
       BACKUP_FILESYSTEM_PATH: '/var/lib/weaviate/backups'
       CLUSTER_HOSTNAME: 'cluster-init'
+    volumes:
+      - weaviate_data:/var/lib/weaviate
+      - weaviate_backups:/var/lib/weaviate/backups
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.4
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - xpack.security.enabled=false
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.11.4
+    container_name: kibana
+    ports:
+      - "5601:5601"
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    depends_on:
+      - elasticsearch
+
+volumes:
+  redis_data:
+  weaviate_data:
+  weaviate_backups:
+  elasticsearch_data:

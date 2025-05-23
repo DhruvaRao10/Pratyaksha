@@ -1,0 +1,46 @@
+.graph-view-page {
+  padding: 20px;
+  height: calc(100vh - 80px);
+  display: flex;
+  flex-direction: column;
+}
+
+.graph-view-page h1 {
+  margin-bottom: 20px;
+  font-size: 2rem;
+  color: #333;
+}
+
+.graph-container {
+  flex: 1;
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+/* Vis.js Network customization */
+.vis-network {
+  outline: none;
+}
+
+.vis-network .vis-node {
+  cursor: pointer;
+}
+
+.vis-network .vis-node:hover {
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+}
+
+.vis-network .vis-label {
+  font-family: 'Inter', sans-serif;
+}
+
+.vis-network .vis-tooltip {
+  background-color: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 14px;
+  pointer-events: none;
+} 
