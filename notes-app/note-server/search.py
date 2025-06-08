@@ -15,7 +15,9 @@ es_host = os.getenv("ELASTICSEARCH_HOST")
 
 def get_es_client():
     try:
-        client = Elasticsearch(hosts=[{"host": es_host, "port": 9200}])
+        client = Elasticsearch(
+            hosts=[{"host": es_host, "port": 9200, "scheme": "http"}]
+        )
         if not client.ping():
             logger.warning("Cannot connect to Elasticsearch")
             return None
