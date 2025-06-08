@@ -50,7 +50,7 @@ import "../styles/homePage.css";
 
 
 
-const API_URL = process.env.Backend_API_URL || 'http://localhost:8000';
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
 
 interface Paper {
