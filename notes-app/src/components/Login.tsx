@@ -27,7 +27,7 @@ import { initializeApp } from "firebase/app";
 import * as validator from "email-validator";
 
 const firebaseConfig = {
-  apiKey:process.env.FIREBASE_API_KEY, 
+  apiKey:process.env.FIREBASE_API_KEY||"AIzaSyBO6hVXLPNSv7_6UHu_3_z4Q18JIPXwEIE", 
   authDomain: process.env.FIREBASE_AUTH_DOMAIN,
   projectId: process.env.FIREBASE_PROJECT_ID,
   storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
