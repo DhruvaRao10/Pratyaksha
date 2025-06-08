@@ -27,13 +27,12 @@ import { initializeApp } from "firebase/app";
 import * as validator from "email-validator";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBO6hVXLPNSv7_6UHu_3_z4Q18JIPXwEIE",
-  authDomain: "intuitnote-2342a.firebaseapp.com",
-  projectId: "intuitnote-2342a",
-  storageBucket: "intuitnote-2342a.firebasestorage.app",
-  messagingSenderId: "530910917968",
-  appId: "1:530910917968:web:05e9209338d22cd198a855",
-  measurementId: "G-R4ML705ZJ7",
+  apiKey:process.env.FIREBASE_API_KEY, 
+  authDomain: process.env.FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.FIREBASE_PROJECT_ID,
+  storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.FIREBASE_APP_ID,
 };
 
 const app = initializeApp(firebaseConfig);
