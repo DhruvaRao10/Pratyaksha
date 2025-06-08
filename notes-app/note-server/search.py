@@ -10,14 +10,14 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Elasticsearch client
-es_host = os.getenv("ELASTICSEARCH_HOST")
+es_url = os.getenv("ELASTICSEARCH_URL")
+es_api_key = os.getenv("ELASTICSEARCH_API_KEY")
+es_client = Elasticsearch([es_url], api_key=es_api_key, verify_certs=True)
 
 
 def get_es_client():
     try:
-        client = Elasticsearch(
-            hosts=[{"host": es_host, "port": 9200, "scheme": "http"}]
-        )
+        client = es_client
         if not client.ping():
             logger.warning("Cannot connect to Elasticsearch")
             return None

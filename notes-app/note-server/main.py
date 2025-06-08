@@ -91,6 +91,10 @@ ALGORITHM = "HS256"
 llama_api_key = os.getenv("LLAMA_APIKEY")
 Base.metadata.create_all(engine)
 
+es_url = os.getenv("ELASTICSEARCH_URL")
+es_api_key = os.getenv("ELASTICSEARCH_API_KEY")
+es_client = Elasticsearch([es_url], api_key=es_api_key, verify_certs=True)
+
 
 firebase_json = os.getenv("FIREBASE_SERVICE_ACCOUNT")
 if firebase_json:
@@ -651,8 +655,6 @@ async def get_document_analysis(
 
 
 # Elasticsearch client
-es_host = os.getenv("ELASTICSEARCH_HOST")
-es_client = Elasticsearch(hosts=[{"host": es_host, "port": 9200, "scheme": "http"}])
 
 # Create the papers index
 if not es_client.indices.exists(index="arxiv_papers"):
