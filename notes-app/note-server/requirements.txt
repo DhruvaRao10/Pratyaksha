@@ -134,6 +134,7 @@ ollama==0.4.7
 openai==1.82.0
 opencv-python-headless==4.11.0.86
 orjson==3.10.16
+pymysql
 packaging==24.1
 pandas==2.2.3
 passlib==1.7.4
