@@ -92,10 +92,13 @@ llama_api_key = os.getenv("LLAMA_APIKEY")
 Base.metadata.create_all(engine)
 
 
-cred = credentials.Certificate(
-    "./intuitnote-2342a-firebase-adminsdk-ia7wu-e8ccda4780.json"
-)
-firebase_admin.initialize_app(cred)
+firebase_json = os.getenv("FIREBASE_SERVICE_ACCOUNT")
+if firebase_json:
+    firebase_creds = json.loads(firebase_json)
+    cred = credentials.Certificate(firebase_creds)
+    firebase_admin.initialize_app(cred)
+else:
+    print("Firebase credentials not found in environment variables")
 
 s3_client = boto3.client(
     "s3",
@@ -1276,4 +1279,3 @@ async def get_prerequisite_papers(request: PrerequisitePapersRequest):
     )
 
     return results
-
