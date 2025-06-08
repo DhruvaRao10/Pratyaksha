@@ -1,7 +1,9 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 
+const API_URL = process.env.Backend_API_URL || 'http://localhost:8000';
+
 const axiosClient = axios.create({
-    baseURL: 'http://localhost:8000',
+    baseURL: API_URL,
     headers: {
         'Content-Type': 'application/json',
     },

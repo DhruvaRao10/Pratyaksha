@@ -48,6 +48,11 @@ import { TrendingPapers } from "../components/TrendingPapers";
 import { SearchIcon } from "../styles/searchIcon";
 import "../styles/homePage.css";
 
+
+
+const API_URL = process.env.Backend_API_URL || 'http://localhost:8000';
+
+
 interface Paper {
   id: string;
   arxiv_id: string;
@@ -88,7 +93,7 @@ export function HomePage() {
     setLoading(true);
     setError(null);
     try {
-      const url = `http://localhost:8000/openalex-search${
+      const url = `${API_URL}/openalex-search${
         q ? `?query=${encodeURIComponent(q)}` : ""
       }`;
       const res = await fetch(url);

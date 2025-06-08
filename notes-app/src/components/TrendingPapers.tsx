@@ -6,6 +6,10 @@ import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import { Skeleton } from "../ui/skeleton";
 
+
+const API_URL = process.env.Backend_API_URL || 'http://localhost:8000';
+
+
 interface TrendingPaper {
   id: string;
   title: string;
@@ -26,7 +30,7 @@ export function TrendingPapers() {
     try {
       setLoading(true);
       setError(null);
-      const response = await fetch("http://localhost:8000/papers-with-code", {
+      const response = await fetch(`${API_URL}/papers-with-code`, {
         headers: {
           'Cache-Control': 'no-cache',
           'Pragma': 'no-cache'
