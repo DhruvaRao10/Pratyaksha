@@ -15,7 +15,7 @@ es_host = os.getenv("ELASTICSEARCH_HOST")
 
 def get_es_client():
     try:
-        client = Elasticsearch(hosts=[es_host])
+        client = Elasticsearch(hosts=[{"host": es_host, "port": 9200}])
         if not client.ping():
             logger.warning("Cannot connect to Elasticsearch")
             return None
@@ -65,7 +65,7 @@ async def search_arxiv(
     """
     search_query = f"{query}"
 
-    # Add filters 
+    # Add filters
     if categories and len(categories) > 0:
         category_filter = " OR ".join([f"cat:{cat}" for cat in categories])
         search_query = f"{search_query} AND ({category_filter})"
@@ -194,4 +194,4 @@ async def index_arxiv_paper(arxiv_id: str):
         logger.error(f"Error indexing ArXiv paper: {e}")
         raise HTTPException(
             status_code=500, detail=f"Error indexing ArXiv paper: {str(e)}"
-        )                         
+        )
