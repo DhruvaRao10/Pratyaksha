@@ -1,0 +1,100 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: weaviate
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: weaviate
+  template:
+    metadata:
+      labels:
+        app: weaviate
+    spec:
+      containers:
+      - name: weaviate
+        image: cr.weaviate.io/semitechnologies/weaviate:1.27.2
+        ports:
+        - containerPort: 5000
+        - containerPort: 50051
+        env:
+        - name: LLAMA_APIKEY
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: llama-api-key
+        - name: QUERY_DEFAULTS_LIMIT
+          value: "25"
+        - name: AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED
+          value: "true"
+        - name: AUTHENTICATION__OIDC__ENABLED
+          value: "false"
+        - name: PERSISTENCE_DATA_PATH
+          value: "/var/lib/weaviate"
+        - name: DEFAULT_VECTORIZER_MODULE
+          value: "none"
+        - name: ENABLE_MODULES
+          value: "text2vec-cohere,text2vec-huggingface,text2vec-openai,generative-openai,generative-cohere"
+        - name: BACKUP_FILESYSTEM_PATH
+          value: "/var/lib/weaviate/backups"
+        - name: CLUSTER_HOSTNAME
+          value: "cluster-init"
+        command:
+        - /bin/weaviate
+        - --host
+        - 0.0.0.0
+        - --port
+        - "5000"
+        - --scheme
+        - http
+        volumeMounts:
+        - name: weaviate-data
+          mountPath: /var/lib/weaviate
+        - name: weaviate-backups
+          mountPath: /var/lib/weaviate/backups
+      volumes:
+      - name: weaviate-data
+        persistentVolumeClaim:
+          claimName: weaviate-data-pvc
+      - name: weaviate-backups
+        persistentVolumeClaim:
+          claimName: weaviate-backups-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: weaviate-service
+spec:
+  selector:
+    app: weaviate
+  ports:
+  - name: http
+    port: 5000
+    targetPort: 5000
+  - name: grpc
+    port: 50051
+    targetPort: 50051
+  type: LoadBalancer
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: weaviate-data-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: weaviate-backups-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi

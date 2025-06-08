@@ -1,6 +1,7 @@
 /node_modules
 /__pycache__
 .env
+.env.gcp
 /venv
 intuitnote-2342a-firebase-adminsdk-ia7wu-e8ccda4780.json
 *.pyc
