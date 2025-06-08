@@ -649,7 +649,7 @@ async def get_document_analysis(
 
 # Elasticsearch client
 es_host = os.getenv("ELASTICSEARCH_HOST")
-es_client = Elasticsearch(hosts=[es_host])
+es = Elasticsearch(hosts=[{"host": "es_host, "port": 9200}])
 
 # Create the papers index
 if not es_client.indices.exists(index="arxiv_papers"):
