@@ -130,13 +130,12 @@ app.add_middleware(
         "http://localhost:3000",
         "http://localhost:8000",
         "https://pratyaksha.vercel.app",
-        "https://*.vercel.app",
     ],
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 
 @app.post("/register")
 def register_user(user: UserCreate, session: Session = Depends(get_session)):
